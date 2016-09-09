@@ -25,9 +25,13 @@ public class LoggingService extends Service
     private static boolean RUNNING = false;
 
     public static final String SERVICE_START =
-            "io.github.malvadeza.floatingcar.logging_service.start_service";
+            "io.github.malvadeza.floatingcar.logging_service.service_start";
     public static final String SERVICE_BROADCAST_MESSAGE =
             "io.github.malvadeza.floatingcar.logging_service.broadcast_message";
+    public static final String SERVICE_STARTED =
+            "io.github.malvadeza.floatingcar.logging_service.service_started";
+    public static final String SERVICE_MESSAGE =
+            "io.github.malvadeza.floatingcar.logging_service.message";
 
     private LocalBroadcastManager mBroadcastManager;
 
@@ -40,6 +44,7 @@ public class LoggingService extends Service
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "onCreate");
 
         mBroadcastManager = LocalBroadcastManager.getInstance(this);
 
@@ -66,7 +71,7 @@ public class LoggingService extends Service
         Log.d(TAG, "onStartCommand");
 
         if (intent.getAction().equals(SERVICE_START)) {
-
+            // Start Bluetooth connection
         }
 
         RUNNING = true;
@@ -78,11 +83,11 @@ public class LoggingService extends Service
     public void onDestroy() {
         super.onDestroy();
 
+        Log.d(TAG, "onDestroy");
+
         if (mGoogleApiClient.isConnected()) {
             mGoogleApiClient.disconnect();
         }
-
-        Log.d(TAG, "onDestroy");
 
         RUNNING = false;
     }

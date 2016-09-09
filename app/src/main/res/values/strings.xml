@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Floating Car</string>
+
+    <string name="bluetooth_device_key" translatable="false">bluetoothDeviceKey</string>
 </resources>
