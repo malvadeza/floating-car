@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">Floating Car</string>
+    <string name="app_name" translatable="false">Floating Car</string>
 
     <string name="bluetooth_device_key" translatable="false">bluetoothDeviceKey</string>
+
+    <string name="bluetooth_not_found_error">Couldn't find a Bluetooth Adapter</string>
 </resources>
