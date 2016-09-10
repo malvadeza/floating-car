@@ -21,12 +21,9 @@ public class BluetoothConnection {
     public static final int BLUETOOTH_CONNECTING_DEVICE = 1;
     public static final int BLUETOOTH_CONNECTED_DEVICE = 2;
     public static final int BLUETOOTH_STATE_CHANGE = 3;
-    public static final int BLUETOOTH_MESSAGE_ = 4;
 
     public static final String BLUETOOTH_TARGET_DEVICE =
             "io.github.malvadeza.floatingcar.bluetooth.target_device";
-    public static final String BLUETOOTH_MESSAGE =
-            "io.github.malvadeza.floatingcar.bluetooth.message";
 
     public static final int BLUETOOTH_STATE_NOT_CONNECTED = 0;
     public static final int BLUETOOTH_STATE_CONNECTING = 1;
@@ -61,6 +58,8 @@ public class BluetoothConnection {
 
         setState(BLUETOOTH_STATE_CONNECTING);
 
+        mBtAdapter.cancelDiscovery();
+
         connectThread = new ConnectThread(btDevice);
         connectThread.start();
     }
@@ -86,7 +85,7 @@ public class BluetoothConnection {
     }
 
     public void disconnect() {
-        if ( connectThread != null ) {
+        if (connectThread != null) {
             connectThread.cancel();
             connectThread = null;
         }
@@ -98,7 +97,6 @@ public class BluetoothConnection {
         Log.d(TAG, "BluetoothConnection.setState() -> " + this.state + " -> " + state);
         this.state = state;
 
-        // Give the new state to the Handler so the UI Activity can update
         mHandler.obtainMessage(BLUETOOTH_STATE_CHANGE, state, -1).sendToTarget();
     }
 
@@ -119,8 +117,6 @@ public class BluetoothConnection {
         @Override
         public void run() {
             Log.d(TAG, "Beginning ConnectThread");
-
-            mBtAdapter.cancelDiscovery();
 
             try {
                 mBtSocket.connect();
@@ -151,16 +147,6 @@ public class BluetoothConnection {
             }
         }
 
-    }
-
-    private void connectionLost() {
-        Bundle bundle = new Bundle();
-        bundle.putString(BLUETOOTH_MESSAGE, "Device connection was lost");
-
-        Message msg = mHandler.obtainMessage(BLUETOOTH_MESSAGE_);
-        msg.setData(bundle);
-
-        mHandler.sendMessage(msg);
     }
 }
 

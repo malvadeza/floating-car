@@ -1,10 +1,17 @@
 package io.github.malvadeza.floatingcar;
 
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
@@ -15,6 +22,10 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+
+import java.lang.ref.WeakReference;
+
+import io.github.malvadeza.floatingcar.bluetooth.BluetoothConnection;
 
 public class LoggingService extends Service
         implements GoogleApiClient.ConnectionCallbacks,
@@ -38,6 +49,11 @@ public class LoggingService extends Service
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
 
+    private BluetoothConnection mBtConnection;
+
+    private BluetoothHandler mHandler;
+    private BluetoothAdapter mBtAdapter;
+
     public LoggingService() {
     }
 
@@ -47,6 +63,16 @@ public class LoggingService extends Service
         Log.d(TAG, "onCreate");
 
         mBroadcastManager = LocalBroadcastManager.getInstance(this);
+        mHandler = new BluetoothHandler(this);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+            if (bluetoothManager != null) {
+                mBtAdapter = bluetoothManager.getAdapter();
+            }
+        } else {
+            mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+        }
 
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -71,7 +97,19 @@ public class LoggingService extends Service
         Log.d(TAG, "onStartCommand");
 
         if (intent.getAction().equals(SERVICE_START)) {
-            // Start Bluetooth connection
+            /**
+             * Here I should instantiate the Handler and the Bluetooth Connection class
+             * passing the handler to it. In the handler "handleMessage" method, I should
+             * receive if the connection was either successful or a failure, acting accordingly.
+             *
+             * If the connection is successful, I should first broadcast a message telling
+             * it. Then, make the Service a Foreground Service and start a new Thread to
+             * make the logging.
+             */
+            BluetoothDevice btDevice = intent.getParcelableExtra("bluetoothDevice");
+
+            mBtConnection = new BluetoothConnection(mHandler, mBtAdapter);
+            mBtConnection.connect(btDevice);
         }
 
         RUNNING = true;
@@ -119,5 +157,37 @@ public class LoggingService extends Service
     @Override
     public void onLocationChanged(Location location) {
 
+    }
+
+    public static class BluetoothHandler extends Handler {
+        private final WeakReference<LoggingService> loggingServiceReference;
+
+        public BluetoothHandler(LoggingService service) {
+            loggingServiceReference = new WeakReference<LoggingService>(service);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+
+            LoggingService service = loggingServiceReference.get();
+
+            if (service == null) return;
+
+            switch (msg.what) {
+                case BluetoothConnection.BLUETOOTH_CONNECTING_DEVICE:
+                    // Connecting to device
+                    // BLUETOOTH_TARGET_DEVICE contains the device name:macaddress
+                    break;
+                case BluetoothConnection.BLUETOOTH_CONNECTED_DEVICE:
+                    // Connected to device
+                    // send broadcast to activity
+                    // BLUETOOTH_TARGET_DEVICE contains the device name:macaddress
+                    break;
+                default:
+                    throw new IllegalArgumentException("Should never be reached");
+            }
+
+        }
     }
 }
