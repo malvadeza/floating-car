@@ -24,6 +24,8 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import io.github.malvadeza.floatingcar.bluetooth.BluetoothConnection;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -106,17 +108,44 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Received broadcast from service");
 
                 if (intent.getAction().equals(LoggingService.SERVICE_BROADCAST_MESSAGE)) {
-                    if (intent.getStringExtra("msg").equals(LoggingService.SERVICE_STARTED)) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mProgressBar.setVisibility(View.INVISIBLE);
-                            }
-                        });
+                    switch (intent.getStringExtra(LoggingService.SERVICE_MESSAGE)) {
+                        case LoggingService.SERVICE_CONNECTING:
+                            Log.d(TAG, "Service connecting");
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mProgressBar.setVisibility(View.VISIBLE);
+                                }
+                            });
+                            break;
+                        case LoggingService.SERVICE_CONNECTED:
+                            Log.d(TAG, "Service connecting");
+                            String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE);
+
+                            mSharedPreferences.edit().putString(getString(R.string.bluetooth_device_key), address);
+
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mProgressBar.setVisibility(View.GONE);
+                                    Toast.makeText(MainActivity.this, "Starting logging", Toast.LENGTH_LONG).show();
+                                }
+                            });
+                            break;
+                        case LoggingService.SERVICE_BLUETOOTH_ERROR:
+                            Log.d(TAG, "Service bluetooth error");
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mProgressBar.setVisibility(View.GONE);
+                                    Toast.makeText(MainActivity.this,
+                                            "Error connecting to bluetooth device",
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
+
                     }
                 }
-
-
             }
         };
     }
@@ -147,8 +176,6 @@ public class MainActivity extends AppCompatActivity {
 
         if (resultCode == RESULT_OK) {
             String address = data.getStringExtra(BluetoothActivity.BLUETOOTH_DEVICE_ADDRESS);
-
-            mSharedPreferences.edit().putString(getString(R.string.bluetooth_device_key), address);
 
             Log.d(TAG, "Device address -> " + address);
 

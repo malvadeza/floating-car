@@ -21,6 +21,7 @@ public class BluetoothConnection {
     public static final int BLUETOOTH_CONNECTING_DEVICE = 1;
     public static final int BLUETOOTH_CONNECTED_DEVICE = 2;
     public static final int BLUETOOTH_STATE_CHANGE = 3;
+    public static final int BLUETOOTH_CONNECTION_ERROR = 4;
 
     public static final String BLUETOOTH_TARGET_DEVICE =
             "io.github.malvadeza.floatingcar.bluetooth.target_device";
@@ -70,7 +71,7 @@ public class BluetoothConnection {
         this.btSocket = btSocket;
 
         Bundle bundle = new Bundle();
-        bundle.putString(BLUETOOTH_TARGET_DEVICE, btDevice.getName());
+        bundle.putString(BLUETOOTH_TARGET_DEVICE, btDevice.getAddress());
 
         Message msg = mHandler.obtainMessage(BLUETOOTH_CONNECTED_DEVICE);
         msg.setData(bundle);
@@ -122,6 +123,8 @@ public class BluetoothConnection {
                 mBtSocket.connect();
             } catch (IOException e) {
                 Log.e(TAG, "ConnectTread.run() -> Socket connection failed", e);
+
+                mHandler.obtainMessage(BLUETOOTH_CONNECTION_ERROR).sendToTarget();
 
                 try {
                     mBtSocket.close();
