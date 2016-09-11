@@ -3,5 +3,6 @@
 
     <string name="bluetooth_device_key" translatable="false">bluetoothDeviceKey</string>
 
-    <string name="bluetooth_not_found_error">Couldn't find a Bluetooth Adapter</string>
+    <string name="bluetooth_not_found_error">Couldn\'t find a Bluetooth Adapter</string>
+    <string name="bluetooth_not_enabled">Bluetooth not enabled.</string>
 </resources>
