@@ -45,6 +45,14 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(TAG, "onCreate");
 
+        if (LoggingService.isRunning()) {
+            /**
+             * Should start Details activity
+             */
+            Intent intent = new Intent(this, LoggingDetailsActivity.class);
+            startActivity(intent);
+        }
+
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -66,10 +74,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 /* Should ask permissions */
-                Log.d(TAG, "Start tracking trip");
-
-                if (LoggingService.isRunning()) return;
-
                 if (mBtAdapter == null) {
                     runOnUiThread(new Runnable() {
                         @Override
@@ -81,25 +85,34 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                String bluetoothDeviceAddress = mSharedPreferences.getString(getString(R.string.bluetooth_device_key), "");
+                if (requestLocationPermissions()) {
+                    return;
+                }
 
-                if (bluetoothDeviceAddress.isEmpty()) {
-                    Intent intent = new Intent(MainActivity.this, BluetoothActivity.class);
-                    startActivityForResult(intent, BluetoothActivity.REQUEST_CONNECT_DEVICE);
+                Log.d(TAG, "Start tracking trip");
+
+                if (!LoggingService.isRunning()) {
+                    String bluetoothDeviceAddress = mSharedPreferences.getString(getString(R.string.bluetooth_device_key), "");
+
+                    if (bluetoothDeviceAddress.isEmpty()) {
+                        Intent intent = new Intent(MainActivity.this, BluetoothActivity.class);
+                        startActivityForResult(intent, BluetoothActivity.REQUEST_CONNECT_DEVICE);
+                    } else {
+                        /**
+                         * Here I send the BluetoothDevice to the Service
+                         * The service then tries to connect to the device,
+                         * if it is unable to connect, it should return to
+                         * broadcast receiver with an error code informing
+                         * what was the error
+                         */
+
+                        startBluetoothService(bluetoothDeviceAddress);
+                    }
                 } else {
-                    /**
-                     * Here I send the BluetoothDevice to the Service
-                     * The service then tries to connect to the device,
-                     * if it is unable to connect, it should return to
-                     * broadcast receiver with an error code informing
-                     * what was the error
-                     */
-
-                    startBluetoothService(bluetoothDeviceAddress);
+                    Intent intent = new Intent(MainActivity.this, LoggingDetailsActivity.class);
+                    startActivity(intent);
                 }
             }
-
-
         });
 
         mBroadcastReceiver = new BroadcastReceiver() {
@@ -119,8 +132,8 @@ public class MainActivity extends AppCompatActivity {
                             });
                             break;
                         case LoggingService.SERVICE_CONNECTED:
-                            Log.d(TAG, "Service connecting");
-                            String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE);
+                            Log.d(TAG, "Service connected");
+                            final String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE);
 
                             mSharedPreferences.edit().putString(getString(R.string.bluetooth_device_key), address);
 
@@ -128,7 +141,12 @@ public class MainActivity extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     mProgressBar.setVisibility(View.GONE);
-                                    Toast.makeText(MainActivity.this, "Starting logging", Toast.LENGTH_LONG).show();
+                                    Toast.makeText(MainActivity.this,
+                                            "Connected to " + address + ". Starting Logging",
+                                            Toast.LENGTH_LONG).show();
+
+                                    Intent intent = new Intent(MainActivity.this, LoggingDetailsActivity.class);
+                                    startActivity(intent);
                                 }
                             });
                             break;
@@ -141,6 +159,14 @@ public class MainActivity extends AppCompatActivity {
                                     Toast.makeText(MainActivity.this,
                                             "Error connecting to bluetooth device",
                                             Toast.LENGTH_LONG).show();
+                                }
+                            });
+                            break;
+                        default:
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, "Received Message", Toast.LENGTH_LONG).show();
                                 }
                             });
 
@@ -193,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean requestLocationPermissions() {
-        if (Build.VERSION.SDK_INT >= 23
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1
                 && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{

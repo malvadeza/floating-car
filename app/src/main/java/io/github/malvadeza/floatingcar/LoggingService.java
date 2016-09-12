@@ -1,5 +1,7 @@
 package io.github.malvadeza.floatingcar;
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -7,6 +9,7 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,6 +18,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -112,7 +116,7 @@ public class LoggingService extends Service {
              * Now I should start the Logging thread and pass the socket to it.
              * Then make the Service a Foreground Service.
              */
-            mLoggingThread = new LoggingThread(this);
+            mLoggingThread = new LoggingThread(this, mBtConnection.getSocket());
 
             mBtHandler = null;
             mBtConnection = null;
@@ -134,8 +138,24 @@ public class LoggingService extends Service {
 
             mGoogleApiClient.connect();
 
+            Intent stopIntent = new Intent(this, LoggingService.class);
+            stopIntent.setAction(SERVICE_STOP_LOGGING);
+
+            PendingIntent pStopIntent = PendingIntent.getService(this, 0, stopIntent, 0);
+
+            Notification notification = new NotificationCompat.Builder(this)
+                    .setContentTitle(getString(R.string.notification_content_title))
+                    .setTicker("Ticker text")
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setOngoing(true)
+                    .addAction(android.R.drawable.ic_dialog_alert, "Stop Logging", pStopIntent)
+                    .build();
+
+            startForeground(10, notification);
+
             new Thread(mLoggingThread).start();
         } else if (intent.getAction().equals(SERVICE_STOP_LOGGING)) {
+            stopForeground(true);
             mLoggingThread.stopLogging();
             stopSelf();
         }

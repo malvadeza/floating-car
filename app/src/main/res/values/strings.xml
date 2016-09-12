@@ -5,4 +5,5 @@
 
     <string name="bluetooth_not_found_error">Couldn\'t find a Bluetooth Adapter</string>
     <string name="bluetooth_not_enabled">Bluetooth not enabled.</string>
+    <string name="notification_content_title">Logging your trip</string>
 </resources>

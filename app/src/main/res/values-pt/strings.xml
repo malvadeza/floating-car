@@ -3,4 +3,5 @@
     <string name="app_name">Floating Car</string>
     <string name="bluetooth_not_found_error">Não foi possível encontrar um adaptador Bluetooth</string>
     <string name="bluetooth_not_enabled">Bluetooth não ativado.</string>
+    <string name="notification_content_title">Salvando dados de sua viagem</string>
 </resources>
