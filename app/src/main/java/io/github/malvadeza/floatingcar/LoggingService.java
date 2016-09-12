@@ -28,11 +28,9 @@ import java.lang.ref.WeakReference;
 
 import io.github.malvadeza.floatingcar.bluetooth.BluetoothConnection;
 
-public class LoggingService extends Service
-        implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+public class LoggingService extends Service {
     private static final String TAG = LoggingService.class.getSimpleName();
+
 
     private static boolean RUNNING = false;
 
@@ -40,10 +38,18 @@ public class LoggingService extends Service
             "io.github.malvadeza.floatingcar.logging_service.service_start";
     public static final String SERVICE_START_LOGGING =
             "io.github.malvadeza.floatingcar.logging_service.service_start_logging";
+    public static final String SERVICE_STOP_LOGGING =
+            "io.github.malvadeza.floatingcar.logging_service.service_stop_logging";
     public static final String SERVICE_BROADCAST_MESSAGE =
             "io.github.malvadeza.floatingcar.logging_service.broadcast_message";
     public static final String SERVICE_STARTED =
             "io.github.malvadeza.floatingcar.logging_service.service_started";
+    public static final String SERVICE_LOCATION_CHANGED =
+            "io.github.malvadeza.floatingcar.logging_service.location_changed";
+    public static final String SERVICE_LOCATION_LATLNG =
+            "io.github.malvadeza.floatingcar.logging_service.location_latlng";
+    public static final String SERVICE_LOCATION_ERROR =
+            "io.github.malvadeza.floatingcar.logging_service.location_latlng";
     public static final String SERVICE_CONNECTING =
             "io.github.malvadeza.floatingcar.logging_service.service_connecting";
     public static final String SERVICE_CONNECTED =
@@ -59,6 +65,8 @@ public class LoggingService extends Service
     private LocationRequest mLocationRequest;
 
     private BluetoothConnection mBtConnection;
+
+    private LoggingThread mLoggingThread;
 
     private BluetoothHandler mBtHandler;
     private LoggingHandler mLogHandler;
@@ -82,21 +90,6 @@ public class LoggingService extends Service
         } else {
             mBtAdapter = BluetoothAdapter.getDefaultAdapter();
         }
-
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
-        }
-
-        if (mLocationRequest == null) {
-            mLocationRequest = LocationRequest.create()
-                    .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                    .setInterval(3 * 1000)
-                    .setFastestInterval(1 * 1000);
-        }
     }
 
     @Override
@@ -119,12 +112,31 @@ public class LoggingService extends Service
              * Now I should start the Logging thread and pass the socket to it.
              * Then make the Service a Foreground Service.
              */
-
-            BluetoothSocket btSocket = mBtConnection.getSocket();
+            mLoggingThread = new LoggingThread(this);
 
             mBtHandler = null;
             mBtConnection = null;
 
+            if (mGoogleApiClient == null) {
+                mGoogleApiClient = new GoogleApiClient.Builder(this)
+                        .addConnectionCallbacks(mLoggingThread)
+                        .addOnConnectionFailedListener(mLoggingThread)
+                        .addApi(LocationServices.API)
+                        .build();
+            }
+
+            if (mLocationRequest == null) {
+                mLocationRequest = LocationRequest.create()
+                        .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                        .setInterval(3 * 1000)
+                        .setFastestInterval(1 * 1000);
+            }
+
+            mGoogleApiClient.connect();
+
+            new Thread(mLoggingThread).start();
+        } else if (intent.getAction().equals(SERVICE_STOP_LOGGING)) {
+            mLoggingThread.stopLogging();
             stopSelf();
         }
 
@@ -153,26 +165,6 @@ public class LoggingService extends Service
 
     public static synchronized boolean isRunning() {
         return RUNNING;
-    }
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-
     }
 
     public static class BluetoothHandler extends Handler {
@@ -253,6 +245,111 @@ public class LoggingService extends Service
             /**
              * Get the data from the thread, and save it to the SQLite database.
              */
+        }
+    }
+
+    public static class LoggingThread
+            implements Runnable,
+            GoogleApiClient.ConnectionCallbacks,
+            GoogleApiClient.OnConnectionFailedListener,
+            LocationListener {
+        private final WeakReference<LoggingService> loggingServiceReference;
+        private final BluetoothSocket mBtSocket;
+
+        private boolean shouldBeLogging = true;
+
+        private Location lastLocation;
+
+        public LoggingThread(LoggingService service) {
+            this(service, null);
+        }
+
+        public LoggingThread(LoggingService service, BluetoothSocket btSocket) {
+            loggingServiceReference = new WeakReference<LoggingService>(service);
+            mBtSocket = btSocket;
+        }
+        @Override
+        public void run() {
+            while (shouldBeLogging) {
+                try {
+                    /**
+                     * Here I get all the stuff and save in database
+                     */
+                    LoggingService service = loggingServiceReference.get();
+
+                    Intent intent = new Intent(SERVICE_BROADCAST_MESSAGE);
+                    intent.putExtra(SERVICE_MESSAGE, SERVICE_LOCATION_CHANGED);
+                    intent.putExtra(SERVICE_LOCATION_LATLNG, lastLocation);
+
+                    service.mBroadcastManager.sendBroadcast(intent);
+
+                    Thread.sleep(5 * 1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
+            Log.d(TAG, "Finished logging");
+        }
+
+        public synchronized void stopLogging() {
+            Log.d(TAG, "stopLogging");
+            shouldBeLogging = false;
+        }
+
+        @Override
+        public void onConnected(@Nullable Bundle bundle) {
+            Log.d(TAG, "onConnected");
+
+            LoggingService service = loggingServiceReference.get();
+
+            if (service == null) return;
+
+            LocationServices.FusedLocationApi.requestLocationUpdates(service.mGoogleApiClient, service.mLocationRequest, this);
+
+            Location location = LocationServices.FusedLocationApi.getLastLocation(service.mGoogleApiClient);
+
+            if (location != null) {
+                synchronized (this) {
+                    lastLocation = location;
+                }
+            }
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+            Log.d(TAG, "onConnectionSuspended");
+        }
+
+        @Override
+        public void onLocationChanged(Location location) {
+            Log.d(TAG, "onLocationChanged");
+
+            LoggingService service = loggingServiceReference.get();
+
+            if (service == null) return;
+
+            synchronized (this) {
+                lastLocation = location;
+            }
+        }
+
+        @Override
+        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+            Log.d(TAG, "onConnectionFailed");
+
+            LoggingService service = loggingServiceReference.get();
+            if (service == null) return;
+
+            Intent intent = new Intent(SERVICE_BROADCAST_MESSAGE);
+            intent.putExtra(SERVICE_MESSAGE, SERVICE_LOCATION_ERROR);
+            service.mBroadcastManager.sendBroadcast(intent);
+
+            intent = new Intent(service, LoggingService.class);
+            intent.setAction(SERVICE_STOP_LOGGING);
+            service.startService(intent);
+
         }
     }
 }
