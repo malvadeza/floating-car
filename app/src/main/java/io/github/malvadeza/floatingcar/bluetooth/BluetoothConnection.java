@@ -32,7 +32,7 @@ public class BluetoothConnection {
 
     private Handler mHandler;
 
-    private int state = 0;
+    private int state = BLUETOOTH_STATE_NOT_CONNECTED;
 
     private BluetoothAdapter mBtAdapter;
 
