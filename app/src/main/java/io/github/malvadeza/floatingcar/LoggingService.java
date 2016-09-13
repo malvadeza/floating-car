@@ -7,9 +7,11 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
+import android.database.sqlite.SQLiteDatabase;
+
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,8 +31,13 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import java.lang.ref.WeakReference;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import io.github.malvadeza.floatingcar.bluetooth.BluetoothConnection;
+import io.github.malvadeza.floatingcar.database.FloatingCarContract;
+import io.github.malvadeza.floatingcar.database.FloatingCarDbHelper;
 
 public class LoggingService extends Service {
     private static final String TAG = LoggingService.class.getSimpleName();
@@ -48,10 +55,18 @@ public class LoggingService extends Service {
             "io.github.malvadeza.floatingcar.logging_service.broadcast_message";
     public static final String SERVICE_STARTED =
             "io.github.malvadeza.floatingcar.logging_service.service_started";
-    public static final String SERVICE_LOCATION_CHANGED =
+    public static final String SERVICE_NEW_DATA =
             "io.github.malvadeza.floatingcar.logging_service.location_changed";
     public static final String SERVICE_LOCATION_LATLNG =
             "io.github.malvadeza.floatingcar.logging_service.location_latlng";
+    public static final String SERVICE_DATA_SPEED =
+            "io.github.malvadeza.floatingcar.logging_service.data_speed";
+    public static final String SERVICE_DATA_THROTTLE =
+            "io.github.malvadeza.floatingcar.logging_service.data_throttle";
+    public static final String SERVICE_DATA_RPM =
+            "io.github.malvadeza.floatingcar.logging_service.data_rpm";
+    public static final String SERVICE_DATA_TEMPERATURE =
+            "io.github.malvadeza.floatingcar.logging_service.data_temperature";
     public static final String SERVICE_LOCATION_ERROR =
             "io.github.malvadeza.floatingcar.logging_service.location_latlng";
     public static final String SERVICE_CONNECTING =
@@ -73,7 +88,6 @@ public class LoggingService extends Service {
     private LoggingThread mLoggingThread;
 
     private BluetoothHandler mBtHandler;
-    private LoggingHandler mLogHandler;
     private BluetoothAdapter mBtAdapter;
 
     public LoggingService() {
@@ -116,7 +130,8 @@ public class LoggingService extends Service {
              * Now I should start the Logging thread and pass the socket to it.
              * Then make the Service a Foreground Service.
              */
-            mLoggingThread = new LoggingThread(this, mBtConnection.getSocket());
+//            mLoggingThread = new LoggingThread(this, mBtConnection.getSocket());
+            mLoggingThread = new LoggingThread(this);
 
             mBtHandler = null;
             mBtConnection = null;
@@ -235,7 +250,7 @@ public class LoggingService extends Service {
                 case BluetoothConnection.BLUETOOTH_STATE_CHANGE: {
                     break;
                 }
-                case BluetoothConnection.BLUETOOTH_CONNECTION_ERROR:{
+                case BluetoothConnection.BLUETOOTH_CONNECTION_ERROR: {
                     Intent intent = new Intent(LoggingService.SERVICE_BROADCAST_MESSAGE);
                     intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_BLUETOOTH_ERROR);
 
@@ -268,13 +283,18 @@ public class LoggingService extends Service {
         }
     }
 
-    public static class LoggingThread
+    @SuppressWarnings({"MissingPermission"})
+    private static class LoggingThread
             implements Runnable,
             GoogleApiClient.ConnectionCallbacks,
             GoogleApiClient.OnConnectionFailedListener,
             LocationListener {
         private final WeakReference<LoggingService> loggingServiceReference;
         private final BluetoothSocket mBtSocket;
+
+        private final long mTripId;
+
+        private final SQLiteDatabase mDb;
 
         private boolean shouldBeLogging = true;
 
@@ -287,28 +307,58 @@ public class LoggingService extends Service {
         public LoggingThread(LoggingService service, BluetoothSocket btSocket) {
             loggingServiceReference = new WeakReference<LoggingService>(service);
             mBtSocket = btSocket;
+            mDb = new FloatingCarDbHelper(service).getWritableDatabase();
+
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
+
+            ContentValues trip = new ContentValues();
+            trip.put(FloatingCarContract.TripEntry.STARTED_AT, formatter.format(new Date()));
+
+            mTripId = mDb.insert(FloatingCarContract.TripEntry.TABLE_NAME, null, trip);
         }
+
         @Override
         public void run() {
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
             while (shouldBeLogging) {
                 try {
                     /**
                      * Here I get all the stuff and save in database
+                     * and send to activity (if there's any)
                      */
+                    Thread.sleep(5 * 1000);
+
+                    ContentValues sample = new ContentValues();
+                    sample.put(FloatingCarContract.SampleEntry.TIMESTAMP, formatter.format(new Date()));
+                    sample.put(FloatingCarContract.SampleEntry.TRIP_ID, mTripId);
+
+                    final long sampleId = mDb.insert(FloatingCarContract.SampleEntry.TABLE_NAME, null, sample);
+
+                    ContentValues phoneData = new ContentValues();
+                    phoneData.put(FloatingCarContract.PhoneDataEntry.LATITUDE, Double.toString(lastLocation != null ? lastLocation.getLatitude() : 0.0));
+                    phoneData.put(FloatingCarContract.PhoneDataEntry.LONGITUDE, Double.toString(lastLocation != null ? lastLocation.getLongitude() : 0.0));
+                    phoneData.put(FloatingCarContract.PhoneDataEntry.SAMPLE_ID, sampleId);
+
+                    mDb.insert(FloatingCarContract.PhoneDataEntry.TABLE_NAME, null, phoneData);
+
                     LoggingService service = loggingServiceReference.get();
 
                     Intent intent = new Intent(SERVICE_BROADCAST_MESSAGE);
-                    intent.putExtra(SERVICE_MESSAGE, SERVICE_LOCATION_CHANGED);
+                    intent.putExtra(SERVICE_MESSAGE, SERVICE_NEW_DATA);
                     intent.putExtra(SERVICE_LOCATION_LATLNG, lastLocation);
 
                     service.mBroadcastManager.sendBroadcast(intent);
-
-                    Thread.sleep(5 * 1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
 
+            ContentValues trip = new ContentValues();
+            trip.put(FloatingCarContract.TripEntry.FINISHED_AT, formatter.format(new Date()));
+            mDb.update(FloatingCarContract.TripEntry.TABLE_NAME, trip,
+                    FloatingCarContract.TripEntry._ID + " = ?",
+                    new String[]{Long.toString(mTripId)}
+            );
 
             Log.d(TAG, "Finished logging");
         }

@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -26,6 +27,17 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
 
     private GoogleMap mGoogleMap;
 
+    private TextView mLatitudeView;
+    private TextView mLongitudeView;
+    private TextView mAccXView;
+    private TextView mAccYView;
+    private TextView mAccZView;
+    private TextView mSpeedView;
+    private TextView mRPMView;
+    private TextView mThrottleView;
+    private TextView mTemperatureView;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,6 +49,18 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map_fragment);
         mapFragment.getMapAsync(this);
+
+        mLatitudeView = (TextView) findViewById(R.id.latitude);
+        mLongitudeView = (TextView) findViewById(R.id.longitude);
+
+        mAccXView = (TextView) findViewById(R.id.xAxis);
+        mAccYView = (TextView) findViewById(R.id.yAxis);
+        mAccZView = (TextView) findViewById(R.id.zAxis);
+
+        mSpeedView = (TextView) findViewById(R.id.vehicleSpeed);
+        mRPMView = (TextView) findViewById(R.id.engineRpm);
+        mTemperatureView = (TextView) findViewById(R.id.engineTemperature);
+        mThrottleView = (TextView) findViewById(R.id.throttlePosition);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.stop_logging);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -63,22 +87,33 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
                      */
 
                     switch (intent.getStringExtra(LoggingService.SERVICE_MESSAGE)) {
-                        case LoggingService.SERVICE_LOCATION_CHANGED:
-                            Log.d(TAG, "Received new Location");
+                        case LoggingService.SERVICE_NEW_DATA:
+                            Log.d(TAG, "Received new data");
                             final Location location = intent.getParcelableExtra(LoggingService.SERVICE_LOCATION_LATLNG);
+//                            final String speed = intent.getStringExtra(LoggingService.SERVICE_DATA_SPEED);
+//                            final String rpm = intent.getStringExtra(LoggingService.SERVICE_DATA_RPM);
+//                            final String throttle = intent.getStringExtra(LoggingService.SERVICE_DATA_THROTTLE);
+//                            final String temp = intent.getStringExtra(LoggingService.SERVICE_DATA_TEMPERATURE);
 
-                            if (location != null) {
-                                Log.d(TAG, "Updating map location. Lat -> " + location.getLatitude() + " Long -> " + location.getLongitude());
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (location != null) {
                                         double lat = location.getLatitude();
                                         double lng = location.getLongitude();
 
                                         mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lng), 6));
+
+                                        mLatitudeView.setText(Double.toString(lat));
+                                        mLongitudeView.setText(Double.toString(lng));
                                     }
-                                });
-                            }
+
+//                                    mSpeedView.setText(speed + " km/h");
+//                                    mRPMView.setText(rpm);
+//                                    mThrottleView.setText(throttle);
+//                                    mTemperatureView.setText(temp + " °C");
+                                }
+                            });
                             break;
                     }
 
@@ -106,6 +141,7 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
     }
 
     @Override
+    @SuppressWarnings({"MissingPermission"})
     public void onMapReady(GoogleMap googleMap) {
         Log.d(TAG, "onMapReady");
 
