@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
             mBtAdapter = BluetoothAdapter.getDefaultAdapter();
         }
 
-        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

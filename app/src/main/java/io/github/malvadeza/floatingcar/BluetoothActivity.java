@@ -20,9 +20,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.List;
-import java.util.Set;
-
 public class BluetoothActivity extends AppCompatActivity {
     private static final String TAG = BluetoothActivity.class.getSimpleName();
 
@@ -48,7 +45,7 @@ public class BluetoothActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
 
         mAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
 
