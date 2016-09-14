@@ -26,16 +26,11 @@
         android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <android.support.design.widget.CoordinatorLayout
+        <fragment
+            android:id="@+id/map_fragment"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <fragment
-                android:id="@+id/map_fragment"
-                android:name="com.google.android.gms.maps.SupportMapFragment"
-                android:layout_width="match_parent"
-                android:layout_height="200dp" />
-        </android.support.design.widget.CoordinatorLayout>
+            android:layout_height="200dp" />
 
         <!-- TODO: See if there's a better way to lay out the data. -->
         <TableLayout
@@ -186,8 +181,7 @@
 
         </TableLayout>
     </LinearLayout>
-
-
+    
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/stop_logging"
         android:layout_width="wrap_content"
