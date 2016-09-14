@@ -266,29 +266,14 @@ public class LoggingService extends Service {
         }
     }
 
-    public static class LoggingHandler extends Handler {
-        private final WeakReference<LoggingService> loggingServiceReference;
-
-        public LoggingHandler(LoggingService service) {
-            loggingServiceReference = new WeakReference<LoggingService>(service);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-
-            /**
-             * Get the data from the thread, and save it to the SQLite database.
-             */
-        }
-    }
-
     @SuppressWarnings({"MissingPermission"})
     private static class LoggingThread
             implements Runnable,
             GoogleApiClient.ConnectionCallbacks,
             GoogleApiClient.OnConnectionFailedListener,
             LocationListener {
+        private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
+
         private final WeakReference<LoggingService> loggingServiceReference;
         private final BluetoothSocket mBtSocket;
 
@@ -298,7 +283,7 @@ public class LoggingService extends Service {
 
         private boolean shouldBeLogging = true;
 
-        private Location lastLocation;
+        private Location mLastLocation;
 
         public LoggingThread(LoggingService service) {
             this(service, null);
@@ -309,8 +294,6 @@ public class LoggingService extends Service {
             mBtSocket = btSocket;
             mDb = new FloatingCarDbHelper(service).getWritableDatabase();
 
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
-
             ContentValues trip = new ContentValues();
             trip.put(FloatingCarContract.TripEntry.STARTED_AT, formatter.format(new Date()));
 
@@ -319,7 +302,6 @@ public class LoggingService extends Service {
 
         @Override
         public void run() {
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
             while (shouldBeLogging) {
                 try {
                     /**
@@ -335,8 +317,8 @@ public class LoggingService extends Service {
                     final long sampleId = mDb.insert(FloatingCarContract.SampleEntry.TABLE_NAME, null, sample);
 
                     ContentValues phoneData = new ContentValues();
-                    phoneData.put(FloatingCarContract.PhoneDataEntry.LATITUDE, Double.toString(lastLocation != null ? lastLocation.getLatitude() : 0.0));
-                    phoneData.put(FloatingCarContract.PhoneDataEntry.LONGITUDE, Double.toString(lastLocation != null ? lastLocation.getLongitude() : 0.0));
+                    phoneData.put(FloatingCarContract.PhoneDataEntry.LATITUDE, Double.toString(mLastLocation != null ? mLastLocation.getLatitude() : 0.0));
+                    phoneData.put(FloatingCarContract.PhoneDataEntry.LONGITUDE, Double.toString(mLastLocation != null ? mLastLocation.getLongitude() : 0.0));
                     phoneData.put(FloatingCarContract.PhoneDataEntry.SAMPLE_ID, sampleId);
 
                     mDb.insert(FloatingCarContract.PhoneDataEntry.TABLE_NAME, null, phoneData);
@@ -345,7 +327,7 @@ public class LoggingService extends Service {
 
                     Intent intent = new Intent(SERVICE_BROADCAST_MESSAGE);
                     intent.putExtra(SERVICE_MESSAGE, SERVICE_NEW_DATA);
-                    intent.putExtra(SERVICE_LOCATION_LATLNG, lastLocation);
+                    intent.putExtra(SERVICE_LOCATION_LATLNG, mLastLocation);
 
                     service.mBroadcastManager.sendBroadcast(intent);
                 } catch (InterruptedException e) {
@@ -382,7 +364,7 @@ public class LoggingService extends Service {
 
             if (location != null) {
                 synchronized (this) {
-                    lastLocation = location;
+                    mLastLocation = location;
                 }
             }
         }
@@ -401,7 +383,7 @@ public class LoggingService extends Service {
             if (service == null) return;
 
             synchronized (this) {
-                lastLocation = location;
+                mLastLocation = location;
             }
         }
 
