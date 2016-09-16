@@ -6,38 +6,24 @@ import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothSocket;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 
-import android.location.Location;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import java.lang.ref.WeakReference;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 import io.github.malvadeza.floatingcar.bluetooth.BluetoothConnection;
-import io.github.malvadeza.floatingcar.database.FloatingCarContract;
-import io.github.malvadeza.floatingcar.database.FloatingCarDbHelper;
 
 public class LoggingService extends Service {
     private static final String TAG = LoggingService.class.getSimpleName();
@@ -59,6 +45,12 @@ public class LoggingService extends Service {
             "io.github.malvadeza.floatingcar.logging_service.location_changed";
     public static final String SERVICE_LOCATION_LATLNG =
             "io.github.malvadeza.floatingcar.logging_service.location_latlng";
+    public static final String SERVICE_ACCELEROMETER_X =
+            "io.github.malvadeza.floatingcar.logging_service.accelerometer_x";
+    public static final String SERVICE_ACCELEROMETER_Y =
+            "io.github.malvadeza.floatingcar.logging_service.accelerometer_y";
+    public static final String SERVICE_ACCELEROMETER_Z =
+            "io.github.malvadeza.floatingcar.logging_service.accelerometer_z";
     public static final String SERVICE_DATA_SPEED =
             "io.github.malvadeza.floatingcar.logging_service.data_speed";
     public static final String SERVICE_DATA_THROTTLE =
@@ -78,10 +70,10 @@ public class LoggingService extends Service {
     public static final String SERVICE_MESSAGE =
             "io.github.malvadeza.floatingcar.logging_service.message";
 
-    private LocalBroadcastManager mBroadcastManager;
+    protected LocalBroadcastManager mBroadcastManager;
 
-    private GoogleApiClient mGoogleApiClient;
-    private LocationRequest mLocationRequest;
+    protected GoogleApiClient mGoogleApiClient;
+    protected LocationRequest mLocationRequest;
 
     private BluetoothConnection mBtConnection;
 
@@ -126,10 +118,7 @@ public class LoggingService extends Service {
             mBtConnection.connect(btDevice);
         } else if (intent.getAction().equals(SERVICE_START_LOGGING)) {
             Log.d(TAG, "Start logging data");
-            /**
-             * Now I should start the Logging thread and pass the socket to it.
-             * Then make the Service a Foreground Service.
-             */
+
 //            mLoggingThread = new LoggingThread(this, mBtConnection.getSocket());
             mLoggingThread = new LoggingThread(this);
 
@@ -266,142 +255,4 @@ public class LoggingService extends Service {
         }
     }
 
-    @SuppressWarnings({"MissingPermission"})
-    private static class LoggingThread
-            implements Runnable,
-            GoogleApiClient.ConnectionCallbacks,
-            GoogleApiClient.OnConnectionFailedListener,
-            LocationListener {
-        private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
-
-        private final WeakReference<LoggingService> loggingServiceReference;
-        private final BluetoothSocket mBtSocket;
-
-        private final long mTripId;
-
-        private final SQLiteDatabase mDb;
-
-        private boolean shouldBeLogging = true;
-
-        private Location mLastLocation;
-
-        public LoggingThread(LoggingService service) {
-            this(service, null);
-        }
-
-        public LoggingThread(LoggingService service, BluetoothSocket btSocket) {
-            loggingServiceReference = new WeakReference<LoggingService>(service);
-            mBtSocket = btSocket;
-            mDb = new FloatingCarDbHelper(service).getWritableDatabase();
-
-            ContentValues trip = new ContentValues();
-            trip.put(FloatingCarContract.TripEntry.STARTED_AT, formatter.format(new Date()));
-
-            mTripId = mDb.insert(FloatingCarContract.TripEntry.TABLE_NAME, null, trip);
-        }
-
-        @Override
-        public void run() {
-            while (shouldBeLogging) {
-                try {
-                    /**
-                     * Here I get all the stuff and save in database
-                     * and send to activity (if there's any)
-                     */
-                    Thread.sleep(5 * 1000);
-
-                    ContentValues sample = new ContentValues();
-                    sample.put(FloatingCarContract.SampleEntry.TIMESTAMP, formatter.format(new Date()));
-                    sample.put(FloatingCarContract.SampleEntry.TRIP_ID, mTripId);
-
-                    final long sampleId = mDb.insert(FloatingCarContract.SampleEntry.TABLE_NAME, null, sample);
-
-                    ContentValues phoneData = new ContentValues();
-                    phoneData.put(FloatingCarContract.PhoneDataEntry.LATITUDE, Double.toString(mLastLocation != null ? mLastLocation.getLatitude() : 0.0));
-                    phoneData.put(FloatingCarContract.PhoneDataEntry.LONGITUDE, Double.toString(mLastLocation != null ? mLastLocation.getLongitude() : 0.0));
-                    phoneData.put(FloatingCarContract.PhoneDataEntry.SAMPLE_ID, sampleId);
-
-                    mDb.insert(FloatingCarContract.PhoneDataEntry.TABLE_NAME, null, phoneData);
-
-                    LoggingService service = loggingServiceReference.get();
-
-                    Intent intent = new Intent(SERVICE_BROADCAST_MESSAGE);
-                    intent.putExtra(SERVICE_MESSAGE, SERVICE_NEW_DATA);
-                    intent.putExtra(SERVICE_LOCATION_LATLNG, mLastLocation);
-
-                    service.mBroadcastManager.sendBroadcast(intent);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            ContentValues trip = new ContentValues();
-            trip.put(FloatingCarContract.TripEntry.FINISHED_AT, formatter.format(new Date()));
-            mDb.update(FloatingCarContract.TripEntry.TABLE_NAME, trip,
-                    FloatingCarContract.TripEntry._ID + " = ?",
-                    new String[]{Long.toString(mTripId)}
-            );
-
-            Log.d(TAG, "Finished logging");
-        }
-
-        public synchronized void stopLogging() {
-            Log.d(TAG, "stopLogging");
-            shouldBeLogging = false;
-        }
-
-        @Override
-        public void onConnected(@Nullable Bundle bundle) {
-            Log.d(TAG, "onConnected");
-
-            LoggingService service = loggingServiceReference.get();
-
-            if (service == null) return;
-
-            LocationServices.FusedLocationApi.requestLocationUpdates(service.mGoogleApiClient, service.mLocationRequest, this);
-
-            Location location = LocationServices.FusedLocationApi.getLastLocation(service.mGoogleApiClient);
-
-            if (location != null) {
-                synchronized (this) {
-                    mLastLocation = location;
-                }
-            }
-        }
-
-        @Override
-        public void onConnectionSuspended(int i) {
-            Log.d(TAG, "onConnectionSuspended");
-        }
-
-        @Override
-        public void onLocationChanged(Location location) {
-            Log.d(TAG, "onLocationChanged");
-
-            LoggingService service = loggingServiceReference.get();
-
-            if (service == null) return;
-
-            synchronized (this) {
-                mLastLocation = location;
-            }
-        }
-
-        @Override
-        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-            Log.d(TAG, "onConnectionFailed");
-
-            LoggingService service = loggingServiceReference.get();
-            if (service == null) return;
-
-            Intent intent = new Intent(SERVICE_BROADCAST_MESSAGE);
-            intent.putExtra(SERVICE_MESSAGE, SERVICE_LOCATION_ERROR);
-            service.mBroadcastManager.sendBroadcast(intent);
-
-            intent = new Intent(service, LoggingService.class);
-            intent.setAction(SERVICE_STOP_LOGGING);
-            service.startService(intent);
-
-        }
-    }
 }
