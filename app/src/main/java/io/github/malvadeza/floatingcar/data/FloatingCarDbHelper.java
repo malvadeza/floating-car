@@ -1,13 +1,13 @@
-package io.github.malvadeza.floatingcar.database;
+package io.github.malvadeza.floatingcar.data;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import io.github.malvadeza.floatingcar.database.FloatingCarContract.TripEntry;
-import io.github.malvadeza.floatingcar.database.FloatingCarContract.SampleEntry;
-import io.github.malvadeza.floatingcar.database.FloatingCarContract.PhoneDataEntry;
-import io.github.malvadeza.floatingcar.database.FloatingCarContract.OBDDataEntry;
+import io.github.malvadeza.floatingcar.data.FloatingCarContract.TripEntry;
+import io.github.malvadeza.floatingcar.data.FloatingCarContract.SampleEntry;
+import io.github.malvadeza.floatingcar.data.FloatingCarContract.PhoneDataEntry;
+import io.github.malvadeza.floatingcar.data.FloatingCarContract.OBDDataEntry;
 
 /**
  * Created by tonho on 12/09/2016.

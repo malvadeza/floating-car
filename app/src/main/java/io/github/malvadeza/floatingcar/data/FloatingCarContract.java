@@ -1,4 +1,4 @@
-package io.github.malvadeza.floatingcar.database;
+package io.github.malvadeza.floatingcar.data;
 
 import android.provider.BaseColumns;
 

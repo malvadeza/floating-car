@@ -90,10 +90,14 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
                         case LoggingService.SERVICE_NEW_DATA:
                             Log.d(TAG, "Received new data");
                             final Location location = intent.getParcelableExtra(LoggingService.SERVICE_LOCATION_LATLNG);
-//                            final String speed = intent.getStringExtra(LoggingService.SERVICE_DATA_SPEED);
-//                            final String rpm = intent.getStringExtra(LoggingService.SERVICE_DATA_RPM);
+                            final int speed = intent.getIntExtra(LoggingService.SERVICE_DATA_SPEED, 0);
+                            final int rpm = intent.getIntExtra(LoggingService.SERVICE_DATA_RPM, 0);
 //                            final String throttle = intent.getStringExtra(LoggingService.SERVICE_DATA_THROTTLE);
 //                            final String temp = intent.getStringExtra(LoggingService.SERVICE_DATA_TEMPERATURE);
+
+                            final double accX = intent.getFloatExtra(LoggingService.SERVICE_ACCELEROMETER_X, 0);
+                            final double accY = intent.getFloatExtra(LoggingService.SERVICE_ACCELEROMETER_Y, 0);
+                            final double accZ = intent.getFloatExtra(LoggingService.SERVICE_ACCELEROMETER_Z, 0);
 
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -102,16 +106,20 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
                                         double lat = location.getLatitude();
                                         double lng = location.getLongitude();
 
-                                        mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lng), 6));
+                                        mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lng), 18));
 
                                         mLatitudeView.setText(Double.toString(lat));
                                         mLongitudeView.setText(Double.toString(lng));
                                     }
 
-//                                    mSpeedView.setText(speed + " km/h");
-//                                    mRPMView.setText(rpm);
+                                    mSpeedView.setText(speed + " km/h");
+                                    mRPMView.setText(rpm + " rpm");
 //                                    mThrottleView.setText(throttle);
 //                                    mTemperatureView.setText(temp + " °C");
+
+                                    mAccXView.setText(String.format("%.4f", accX));
+                                    mAccYView.setText(String.format("%.4f", accY));
+                                    mAccZView.setText(String.format("%.4f", accZ));
                                 }
                             });
                             break;
