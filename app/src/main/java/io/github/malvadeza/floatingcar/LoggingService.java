@@ -43,6 +43,8 @@ public class LoggingService extends Service {
             "io.github.malvadeza.floatingcar.logging_service.service_started";
     public static final String SERVICE_NEW_DATA =
             "io.github.malvadeza.floatingcar.logging_service.location_changed";
+    public static final String SERVICE_NEW_TRIP =
+            "io.github.malvadeza.floatingcar.logging_service.new_trip";
     public static final String SERVICE_LOCATION_LATLNG =
             "io.github.malvadeza.floatingcar.logging_service.location_latlng";
     public static final String SERVICE_ACCELEROMETER_X =
@@ -145,13 +147,18 @@ public class LoggingService extends Service {
             Intent stopIntent = new Intent(this, LoggingService.class);
             stopIntent.setAction(SERVICE_STOP_LOGGING);
 
-            PendingIntent pStopIntent = PendingIntent.getService(this, 0, stopIntent, 0);
+            PendingIntent pStopIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            Intent startDetailsIntent = new Intent(this, LoggingDetailsActivity.class);
+            startDetailsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            PendingIntent pStartDetailsIntent = PendingIntent.getActivity(this, 1, startDetailsIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
             Notification notification = new NotificationCompat.Builder(this)
                     .setContentTitle(getString(R.string.notification_content_title))
                     .setTicker("Ticker text")
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setOngoing(true)
+                    .setContentIntent(pStartDetailsIntent)
                     .addAction(android.R.drawable.ic_dialog_alert, "Stop Logging", pStopIntent)
                     .build();
 
