@@ -9,9 +9,6 @@ import io.github.malvadeza.floatingcar.data.FloatingCarContract.SampleEntry;
 import io.github.malvadeza.floatingcar.data.FloatingCarContract.PhoneDataEntry;
 import io.github.malvadeza.floatingcar.data.FloatingCarContract.OBDDataEntry;
 
-/**
- * Created by tonho on 12/09/2016.
- */
 public class FloatingCarDbHelper extends SQLiteOpenHelper {
     private static final int DATABASE_VERSION = 1;
     private static final String DATABASE_NAME = "FloatingCar.db";
@@ -26,17 +23,18 @@ public class FloatingCarDbHelper extends SQLiteOpenHelper {
                 + TripEntry._ID + " INTEGER PRIMARY KEY,"
                 + TripEntry.STARTED_AT + " DATETIME NOT NULL,"
                 + TripEntry.FINISHED_AT + " DATETIME,"
-                + TripEntry.USER_ID + " INTEGER,"
+                + TripEntry.SHA_256 + " TEXT NOT NULL UNIQUE,"
                 + TripEntry.SYNCED + " BOOLEAN NOT NULL DEFAULT 0"
                 + ");";
 
         final String SQL_CREATE_SAMPLE_TABLE = "CREATE TABLE " + SampleEntry.TABLE_NAME + " ("
                 + SampleEntry._ID + " INTEGER PRIMARY KEY,"
                 + SampleEntry.TIMESTAMP + " DATETIME NOT NULL,"
-                + SampleEntry.TRIP_ID + " INTEGER NOT NULL,"
+                + SampleEntry.SHA_256 + " TEXT NOT NULL UNIQUE,"
+                + SampleEntry.SHA_TRIP + " TEXT NOT NULL,"
                 + SampleEntry.SYNCED + " BOOLEAN NOT NULL DEFAULT 0,"
-                + " FOREIGN KEY (" + SampleEntry.TRIP_ID + ") REFERENCES "
-                + TripEntry.TABLE_NAME + " (" + TripEntry._ID + ") "
+                + " FOREIGN KEY (" + SampleEntry.SHA_TRIP + ") REFERENCES "
+                + TripEntry.TABLE_NAME + " (" + TripEntry.SHA_256 + ") "
                 + ");";
 
         final String SQL_CREATE_PHONE_DATA_TABLE = "CREATE TABLE " + PhoneDataEntry.TABLE_NAME + " ("
@@ -46,20 +44,20 @@ public class FloatingCarDbHelper extends SQLiteOpenHelper {
                 + PhoneDataEntry.ACCELEROMETER_X + " REAL,"
                 + PhoneDataEntry.ACCELEROMETER_Y + " REAL,"
                 + PhoneDataEntry.ACCELEROMETER_Z + " REAL,"
-                + PhoneDataEntry.SAMPLE_ID + " INTEGER NOT NULL,"
+                + PhoneDataEntry.SHA_SAMPLE + " TEXT NOT NULL UNIQUE,"
                 + PhoneDataEntry.SYNCED + " BOOLEAN NOT NULL DEFAULT 0,"
-                + " FOREIGN KEY (" + PhoneDataEntry.SAMPLE_ID + ") REFERENCES "
-                + SampleEntry.TABLE_NAME + " (" + SampleEntry._ID +") "
+                + " FOREIGN KEY (" + PhoneDataEntry.SHA_SAMPLE + ") REFERENCES "
+                + SampleEntry.TABLE_NAME + " (" + SampleEntry.SHA_256 +") "
                 + ");";
 
         final String SQL_CREATE_OBD_DATA_TABLE = "CREATE TABLE "+ OBDDataEntry.TABLE_NAME + " ("
                 + OBDDataEntry._ID + " INTEGER PRIMARY KEY,"
                 + OBDDataEntry.VALUE + " TEXT NOT NULL,"
                 + OBDDataEntry.PID + " TEXT NOT NULL,"
-                + OBDDataEntry.SAMPLE_ID + " INTEGER NOT NULL,"
+                + OBDDataEntry.SHA_SAMPLE + " TEXT NOT NULL UNIQUE,"
                 + OBDDataEntry.SYNCED + " BOOLEAN NOT NULL DEFAULT 0,"
-                + " FOREIGN KEY (" + OBDDataEntry.SAMPLE_ID + ") REFERENCES "
-                + SampleEntry.TABLE_NAME + " (" + SampleEntry._ID +") "
+                + " FOREIGN KEY (" + OBDDataEntry.SHA_SAMPLE + ") REFERENCES "
+                + SampleEntry.TABLE_NAME + " (" + SampleEntry.SHA_256 +") "
                 + ");";
 
         db.execSQL(SQL_CREATE_TRIP_TABLE);

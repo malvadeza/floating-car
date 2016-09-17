@@ -2,19 +2,18 @@ package io.github.malvadeza.floatingcar.data;
 
 import android.provider.BaseColumns;
 
-/**
- * Created by tonho on 12/09/2016.
- */
 public class FloatingCarContract {
 
-    private FloatingCarContract() { }
+    private FloatingCarContract() {
+    }
 
     public static class TripEntry implements BaseColumns {
         public static final String TABLE_NAME = "trip";
 
-        public static final String USER_ID = "user_id";
         public static final String STARTED_AT = "started_at";
         public static final String FINISHED_AT = "finished_at";
+
+        public static final String SHA_256 = "sha_256";
 
         public static final String SYNCED = "synced";
     }
@@ -23,7 +22,9 @@ public class FloatingCarContract {
         public static final String TABLE_NAME = "sample";
 
         public static final String TIMESTAMP = "timestamp";
-        public static final String TRIP_ID = "run_id";
+
+        public static final String SHA_256 = "sha_256";
+        public static final String SHA_TRIP = "sha_trip";
 
         public static final String SYNCED = "synced";
     }
@@ -37,7 +38,7 @@ public class FloatingCarContract {
         public static final String ACCELEROMETER_Y = "accelerometer_y";
         public static final String ACCELEROMETER_Z = "accelerometer_z";
 
-        public static final String SAMPLE_ID = "sample_id";
+        public static final String SHA_SAMPLE = "sha_sample";
 
         public static final String SYNCED = "synced";
     }
@@ -47,7 +48,8 @@ public class FloatingCarContract {
 
         public static final String PID = "pid";
         public static final String VALUE = "value";
-        public static final String SAMPLE_ID = "sample_id";
+
+        public static final String SHA_SAMPLE = "sha_sample";
 
         public static final String SYNCED = "synced";
     }

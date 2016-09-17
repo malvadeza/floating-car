@@ -28,8 +28,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import io.github.malvadeza.floatingcar.database.FloatingCarContract;
-import io.github.malvadeza.floatingcar.database.FloatingCarDbHelper;
+import io.github.malvadeza.floatingcar.data.FloatingCarContract;
+import io.github.malvadeza.floatingcar.data.FloatingCarDbHelper;
 
 @SuppressWarnings({"MissingPermission"})
 public class LoggingThread implements Runnable,
@@ -52,7 +52,7 @@ public class LoggingThread implements Runnable,
 
     private boolean shouldBeLogging = true;
 
-    private final long mTripId;
+    private final String mTripSha;
 
     private Location mLastLocation;
 
@@ -70,25 +70,31 @@ public class LoggingThread implements Runnable,
         mBtSocket = btSocket;
         mDb = new FloatingCarDbHelper(service).getWritableDatabase();
 
+        // TODO: use guava Hashing to generate this
+        mTripSha = "hash";
         ContentValues trip = new ContentValues();
         trip.put(FloatingCarContract.TripEntry.STARTED_AT, formatter.format(new Date()));
+        trip.put(FloatingCarContract.TripEntry.SHA_256, mTripSha);
 
-        mTripId = mDb.insert(FloatingCarContract.TripEntry.TABLE_NAME, null, trip);
+        // TODO: Test if insert successful
+        mDb.insert(FloatingCarContract.TripEntry.TABLE_NAME, null, trip);
+
+        service.mBroadcastManager.sendBroadcast(new Intent(LoggingService.SERVICE_NEW_TRIP));
 
         mSensorManager = (SensorManager) service.getSystemService(Context.SENSOR_SERVICE);
         mSensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
         mSensorManager.registerListener(this, mSensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
 
-        try {
-            mInputStream = mBtSocket.getInputStream();
-            mOutputStream = mBtSocket.getOutputStream();
-        } catch (IOException e) {
-            Log.e(TAG, "Error", e);
-            e.printStackTrace();
-        }
+//        try {
+//            mInputStream = mBtSocket.getInputStream();
+//            mOutputStream = mBtSocket.getOutputStream();
+//        } catch (IOException e) {
+//            Log.e(TAG, "Error", e);
+//            e.printStackTrace();
+//        }
 
-        setupObd();
+//        setupObd();
     }
 
     @Override
@@ -97,22 +103,27 @@ public class LoggingThread implements Runnable,
             try {
                 Thread.sleep(5 * 1000);
 
+                // TODO: use guava Hashing to generate this
+                final String sampleSha = "hash";
                 ContentValues sample = new ContentValues();
                 sample.put(FloatingCarContract.SampleEntry.TIMESTAMP, formatter.format(new Date()));
-                sample.put(FloatingCarContract.SampleEntry.TRIP_ID, mTripId);
-                final long sampleId = mDb.insert(FloatingCarContract.SampleEntry.TABLE_NAME, null, sample);
+                sample.put(FloatingCarContract.SampleEntry.SHA_256, sampleSha);
+                sample.put(FloatingCarContract.SampleEntry.SHA_TRIP, mTripSha);
 
-                ContentValues phoneData = createPhoneDataEntry(sampleId);
+                // TODO: Test if insert successful
+                mDb.insert(FloatingCarContract.SampleEntry.TABLE_NAME, null, sample);
+
+                ContentValues phoneData = createPhoneDataEntry(sampleSha);
                 mDb.insert(FloatingCarContract.PhoneDataEntry.TABLE_NAME, null, phoneData);
 
                 /* for every OBD value do this */
-                ContentValues obdData = new ContentValues();
-                obdData.put(FloatingCarContract.OBDDataEntry.PID, "");
-                obdData.put(FloatingCarContract.OBDDataEntry.VALUE, "");
-                obdData.put(FloatingCarContract.OBDDataEntry.SAMPLE_ID, sampleId);
-                mDb.insert(FloatingCarContract.OBDDataEntry.TABLE_NAME, null, obdData);
+//                ContentValues obdData = new ContentValues();
+//                obdData.put(FloatingCarContract.OBDDataEntry.PID, "");
+//                obdData.put(FloatingCarContract.OBDDataEntry.VALUE, "");
+//                obdData.put(FloatingCarContract.OBDDataEntry.SAMPLE_ID, sampleId);
+//                mDb.insert(FloatingCarContract.OBDDataEntry.TABLE_NAME, null, obdData);
 
-                sendInformationBroadcast(new int[]{0}); // send the read data from obd in the array
+                sendInformationBroadcast(50, 2000); // send the read data from obd in the array
             } catch (InterruptedException e) {
                 Log.e(TAG, "Error", e);
                 e.printStackTrace();
@@ -121,10 +132,17 @@ public class LoggingThread implements Runnable,
 
         ContentValues trip = new ContentValues();
         trip.put(FloatingCarContract.TripEntry.FINISHED_AT, formatter.format(new Date()));
+
+        // TODO: Test if update successful
         mDb.update(FloatingCarContract.TripEntry.TABLE_NAME, trip,
-                FloatingCarContract.TripEntry._ID + " = ?",
-                new String[]{Long.toString(mTripId)}
+                FloatingCarContract.TripEntry.SHA_256 + " = ?",
+                new String[]{mTripSha}
         );
+
+        LoggingService service = loggingServiceReference.get();
+        if (service != null) {
+            service.mBroadcastManager.sendBroadcast(new Intent(LoggingService.SERVICE_NEW_TRIP));
+        }
 
         Log.d(TAG, "Finished logging");
     }
@@ -179,7 +197,7 @@ public class LoggingThread implements Runnable,
         return res.toString().replaceAll("SEARCHING", "").replaceAll("\\s", "");
     }
 
-    private void sendInformationBroadcast(int[] obdValues) {
+    private void sendInformationBroadcast(int speedValue, int rpmValue) {
         LoggingService service = loggingServiceReference.get();
 
         Intent intent = new Intent(LoggingService.SERVICE_BROADCAST_MESSAGE);
@@ -188,13 +206,14 @@ public class LoggingThread implements Runnable,
         intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_X, mAccelerometerX);
         intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_Y, mAccelerometerY);
         intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_Z, mAccelerometerZ);
-        // Put OBD values in a Parcelable integer array
+        intent.putExtra(LoggingService.SERVICE_DATA_SPEED, speedValue);
+        intent.putExtra(LoggingService.SERVICE_DATA_RPM, rpmValue);
 
         service.mBroadcastManager.sendBroadcast(intent);
     }
 
     @NonNull
-    private ContentValues createPhoneDataEntry(long sampleId) {
+    private ContentValues createPhoneDataEntry(String sampleSha) {
         ContentValues phoneData = new ContentValues();
 
         if (mLastLocation != null) {
@@ -209,7 +228,7 @@ public class LoggingThread implements Runnable,
             phoneData.put(FloatingCarContract.PhoneDataEntry.ACCELEROMETER_Z, mAccelerometerZ);
         }
 
-        phoneData.put(FloatingCarContract.PhoneDataEntry.SAMPLE_ID, sampleId);
+        phoneData.put(FloatingCarContract.PhoneDataEntry.SHA_SAMPLE, sampleSha);
 
         return phoneData;
     }
@@ -277,7 +296,7 @@ public class LoggingThread implements Runnable,
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        Log.d(TAG, "onSensorChanged");
+//        Log.d(TAG, "onSensorChanged");
 
         Sensor sensor = event.sensor;
 
@@ -291,6 +310,6 @@ public class LoggingThread implements Runnable,
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        Log.d(TAG, "onAccuracyChanged");
+//        Log.d(TAG, "onAccuracyChanged");
     }
 }
