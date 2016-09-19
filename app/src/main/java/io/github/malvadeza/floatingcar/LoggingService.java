@@ -121,11 +121,11 @@ public class LoggingService extends Service {
         } else if (intent.getAction().equals(SERVICE_START_LOGGING)) {
             Log.d(TAG, "Start logging data");
 
-//            mLoggingThread = new LoggingThread(this, mBtConnection.getSocket());
-            mLoggingThread = new LoggingThread(this);
+            mLoggingThread = new LoggingThread(this, mBtConnection.getSocket());
+//            mLoggingThread = new LoggingThread(this);
 
             mBtHandler = null;
-            mBtConnection = null;
+//            mBtConnection = null;
 
             if (mGoogleApiClient == null) {
                 mGoogleApiClient = new GoogleApiClient.Builder(this)

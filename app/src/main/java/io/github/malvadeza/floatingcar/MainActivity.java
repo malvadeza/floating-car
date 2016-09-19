@@ -14,22 +14,31 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import io.github.malvadeza.floatingcar.bluetooth.BluetoothConnection;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+import io.github.malvadeza.floatingcar.adapters.TripAdapter;
+import io.github.malvadeza.floatingcar.bluetooth.BluetoothConnection;
+import io.github.malvadeza.floatingcar.data.TripLoader;
+
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<TripAdapter.TripHolder>> {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final int PERMISSION_REQUEST_LOCATION = 100;
+
+    private static final int LOADER_ID = 1;
 
     private BroadcastReceiver mBroadcastReceiver;
 
@@ -37,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter mBtAdapter;
 
     private ProgressBar mProgressBar;
+
+    private TripAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
@@ -63,6 +75,11 @@ public class MainActivity extends AppCompatActivity {
         } else {
             mBtAdapter = BluetoothAdapter.getDefaultAdapter();
         }
+
+        mAdapter = new TripAdapter(this);
+
+        ListView listView = (ListView) findViewById(R.id.trip_list);
+        listView.setAdapter(mAdapter);
 
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
 
@@ -135,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
                             Log.d(TAG, "Service connected");
                             final String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE);
 
-                            mSharedPreferences.edit().putString(getString(R.string.bluetooth_device_key), address);
+                            mSharedPreferences.edit().putString(getString(R.string.bluetooth_device_key), address).apply();
 
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -162,13 +179,6 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             });
                             break;
-                        default:
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(MainActivity.this, "Received Message", Toast.LENGTH_LONG).show();
-                                }
-                            });
 
                     }
                 }
@@ -245,5 +255,26 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "Permissions denied!");
             }
         }
+    }
+
+    @Override
+    public Loader<List<TripAdapter.TripHolder>> onCreateLoader(int id, Bundle args) {
+        return new TripLoader(this);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<List<TripAdapter.TripHolder>> loader, List<TripAdapter.TripHolder> data) {
+        // Set adapter data
+        mAdapter.clear();
+
+        if (data != null) {
+            // Add data
+            mAdapter.addAll(data);
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<List<TripAdapter.TripHolder>> loader) {
+        mAdapter.clear();
     }
 }

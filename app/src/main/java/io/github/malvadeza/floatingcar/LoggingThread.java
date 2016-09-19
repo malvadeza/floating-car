@@ -19,11 +19,13 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationServices;
+import com.google.common.hash.Hashing;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -71,7 +73,7 @@ public class LoggingThread implements Runnable,
         mDb = new FloatingCarDbHelper(service).getWritableDatabase();
 
         // TODO: use guava Hashing to generate this
-        mTripSha = "hash";
+        mTripSha = Hashing.sha256().hashString(Long.toString(System.currentTimeMillis()), StandardCharsets.UTF_8).toString();
         ContentValues trip = new ContentValues();
         trip.put(FloatingCarContract.TripEntry.STARTED_AT, formatter.format(new Date()));
         trip.put(FloatingCarContract.TripEntry.SHA_256, mTripSha);
@@ -86,25 +88,25 @@ public class LoggingThread implements Runnable,
 
         mSensorManager.registerListener(this, mSensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
 
-//        try {
-//            mInputStream = mBtSocket.getInputStream();
-//            mOutputStream = mBtSocket.getOutputStream();
-//        } catch (IOException e) {
-//            Log.e(TAG, "Error", e);
-//            e.printStackTrace();
-//        }
+        try {
+            mInputStream = mBtSocket.getInputStream();
+            mOutputStream = mBtSocket.getOutputStream();
+        } catch (IOException e) {
+            Log.e(TAG, "Error", e);
+            e.printStackTrace();
+        }
 
-//        setupObd();
+        setupObd();
     }
 
     @Override
     public void run() {
         while (shouldBeLogging) {
             try {
-                Thread.sleep(5 * 1000);
+                Thread.sleep(2 * 1000);
 
                 // TODO: use guava Hashing to generate this
-                final String sampleSha = "hash";
+                final String sampleSha = Hashing.sha256().hashString(Long.toString(System.currentTimeMillis()), StandardCharsets.UTF_8).toString();
                 ContentValues sample = new ContentValues();
                 sample.put(FloatingCarContract.SampleEntry.TIMESTAMP, formatter.format(new Date()));
                 sample.put(FloatingCarContract.SampleEntry.SHA_256, sampleSha);
@@ -117,13 +119,22 @@ public class LoggingThread implements Runnable,
                 mDb.insert(FloatingCarContract.PhoneDataEntry.TABLE_NAME, null, phoneData);
 
                 /* for every OBD value do this */
-//                ContentValues obdData = new ContentValues();
-//                obdData.put(FloatingCarContract.OBDDataEntry.PID, "");
-//                obdData.put(FloatingCarContract.OBDDataEntry.VALUE, "");
-//                obdData.put(FloatingCarContract.OBDDataEntry.SAMPLE_ID, sampleId);
-//                mDb.insert(FloatingCarContract.OBDDataEntry.TABLE_NAME, null, obdData);
+                final int speed = getSpeed();
+                final int rpm = getRPM();
 
-                sendInformationBroadcast(50, 2000); // send the read data from obd in the array
+                ContentValues obdSpeed = new ContentValues();
+                obdSpeed.put(FloatingCarContract.OBDDataEntry.PID, "01 0D");
+                obdSpeed.put(FloatingCarContract.OBDDataEntry.VALUE, speed);
+                obdSpeed.put(FloatingCarContract.OBDDataEntry.SHA_SAMPLE, sampleSha);
+                mDb.insert(FloatingCarContract.OBDDataEntry.TABLE_NAME, null, obdSpeed);
+
+                ContentValues obdRPM = new ContentValues();
+                obdRPM.put(FloatingCarContract.OBDDataEntry.PID, "01 0C");
+                obdRPM.put(FloatingCarContract.OBDDataEntry.VALUE, rpm);
+                obdRPM.put(FloatingCarContract.OBDDataEntry.SHA_SAMPLE, sampleSha);
+                mDb.insert(FloatingCarContract.OBDDataEntry.TABLE_NAME, null, obdRPM);
+
+                sendInformationBroadcast(speed, rpm); // send the read data from obd in the array
             } catch (InterruptedException e) {
                 Log.e(TAG, "Error", e);
                 e.printStackTrace();
@@ -195,6 +206,49 @@ public class LoggingThread implements Runnable,
 
 
         return res.toString().replaceAll("SEARCHING", "").replaceAll("\\s", "");
+    }
+
+    private synchronized int getSpeed() {
+        String command = "01 0D\r";
+
+        try {
+            mOutputStream.write(command.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String response = getResponse();
+
+        int ret;
+
+        try {
+            ret = Integer.parseInt(response.substring(4), 16);
+        } catch (Exception e) {
+            ret = 0;
+        }
+
+        return ret;
+    }
+
+    private synchronized int getRPM() {
+        String command = "01 0C\r";
+
+        try {
+            mOutputStream.write(command.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String response = getResponse();
+        int ret;
+
+        try {
+            ret = Integer.parseInt(response.substring(4), 16) / 4;
+        } catch (Exception e) {
+            ret = 0;
+        }
+
+        return ret;
     }
 
     private void sendInformationBroadcast(int speedValue, int rpmValue) {
