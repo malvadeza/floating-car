@@ -54,7 +54,7 @@ public class FloatingCarDbHelper extends SQLiteOpenHelper {
                 + OBDDataEntry._ID + " INTEGER PRIMARY KEY,"
                 + OBDDataEntry.VALUE + " TEXT NOT NULL,"
                 + OBDDataEntry.PID + " TEXT NOT NULL,"
-                + OBDDataEntry.SHA_SAMPLE + " TEXT NOT NULL UNIQUE,"
+                + OBDDataEntry.SHA_SAMPLE + " TEXT NOT NULL,"
                 + OBDDataEntry.SYNCED + " BOOLEAN NOT NULL DEFAULT 0,"
                 + " FOREIGN KEY (" + OBDDataEntry.SHA_SAMPLE + ") REFERENCES "
                 + SampleEntry.TABLE_NAME + " (" + SampleEntry.SHA_256 +") "

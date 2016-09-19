@@ -18,14 +18,14 @@ import java.util.List;
 import java.util.Locale;
 
 import io.github.malvadeza.floatingcar.LoggingService;
+import io.github.malvadeza.floatingcar.adapters.TripAdapter;
 
 // TODO: Change from TripEntry to another class
-public class TripLoader extends AsyncTaskLoader<List<FloatingCarContract.TripEntry>> {
+public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
     private static final String TAG = TripLoader.class.getSimpleName();
-    private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
     private BroadcastReceiver mBroadcastReceiver;
 
-    private List<FloatingCarContract.TripEntry> mTrips;
+    private List<TripAdapter.TripHolder> mTrips;
 
     private static class LoaderReceiver extends BroadcastReceiver {
         private final WeakReference<TripLoader> loaderReference;
@@ -50,32 +50,55 @@ public class TripLoader extends AsyncTaskLoader<List<FloatingCarContract.TripEnt
     }
 
     @Override
-    public List<FloatingCarContract.TripEntry> loadInBackground() {
+    public List<TripAdapter.TripHolder> loadInBackground() {
         FloatingCarDbHelper dbHelper = new FloatingCarDbHelper(getContext());
         SQLiteDatabase db = dbHelper.getReadableDatabase();
 
-        List<FloatingCarContract.TripEntry> ret = new ArrayList<>();
+        List<TripAdapter.TripHolder> ret = new ArrayList<>();
 
-        Cursor cursor = db.query(FloatingCarContract.TripEntry.TABLE_NAME,
-                new String[]{
-                        FloatingCarContract.TripEntry._ID,
-                        FloatingCarContract.TripEntry.STARTED_AT,
-                        FloatingCarContract.TripEntry.FINISHED_AT,
-                }, null, null, null, null, FloatingCarContract.TripEntry.STARTED_AT + " DESC");
+//        Cursor cursor = db.query(FloatingCarContract.TripEntry.TABLE_NAME,
+//                new String[]{
+//                        FloatingCarContract.TripEntry._ID,
+//                        FloatingCarContract.TripEntry.STARTED_AT,
+//                        FloatingCarContract.TripEntry.FINISHED_AT,
+//                }, null, null, null, null, FloatingCarContract.TripEntry.STARTED_AT + " DESC");
+
+        Cursor cursor = db.rawQuery(
+                "SELECT "
+                        + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry._ID + ", "
+                        + FloatingCarContract.TripEntry.STARTED_AT + ", "
+                        + FloatingCarContract.TripEntry.FINISHED_AT + ", "
+                        + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256 + ", "
+                        + "count(*) as " + FloatingCarContract.TripEntry._COUNT
+                        + " FROM "
+                        + FloatingCarContract.TripEntry.TABLE_NAME
+                        + " JOIN "
+                        + FloatingCarContract.SampleEntry.TABLE_NAME
+                        + " ON "
+                        + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256
+                        + " = "
+                        + FloatingCarContract.SampleEntry.TABLE_NAME + "." + FloatingCarContract.SampleEntry.SHA_TRIP
+                        + " GROUP BY "
+                        + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256
+                        + " ORDER BY "
+                        + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.STARTED_AT + " DESC ",
+                null
+        );
 
         final int idIndex = cursor.getColumnIndex(FloatingCarContract.TripEntry._ID);
         final int startedAtIndex = cursor.getColumnIndex(FloatingCarContract.TripEntry.STARTED_AT);
         final int finishedAtIndex = cursor.getColumnIndex(FloatingCarContract.TripEntry.FINISHED_AT);
+        final int countIndex = cursor.getColumnIndex(FloatingCarContract.TripEntry._COUNT);
 
         try {
             while (cursor.moveToNext()) {
                 final long id = cursor.getLong(idIndex);
                 final String startedAtStr = cursor.getString(startedAtIndex);
                 final String finishedAtStr = cursor.getString(finishedAtIndex);
-                final Date startedAt = parseDate(startedAtStr);
-                final Date finishedAt = parseDate(finishedAtStr);
+                final int count = cursor.getInt(countIndex);
 
                 // TODO: Add Trip object here
+                ret.add(new TripAdapter.TripHolder(id, startedAtStr, finishedAtStr, count));
             }
         } finally {
             cursor.close();
@@ -84,25 +107,15 @@ public class TripLoader extends AsyncTaskLoader<List<FloatingCarContract.TripEnt
         return ret;
     }
 
-    private Date parseDate(String dateStr) {
-        try {
-            return formatter.parse(dateStr);
-        } catch (ParseException | NullPointerException e) {
-            e.printStackTrace();
-
-            return null;
-        }
-    }
-
     @Override
-    public void deliverResult(List<FloatingCarContract.TripEntry> data) {
+    public void deliverResult(List<TripAdapter.TripHolder> data) {
         if (isReset()) {
             if (data != null) {
                 // Release data
             }
         }
 
-        List<FloatingCarContract.TripEntry> oldTrips = mTrips;
+        List<TripAdapter.TripHolder> oldTrips = mTrips;
         mTrips = data;
 
         if (isStarted()) {
@@ -161,7 +174,7 @@ public class TripLoader extends AsyncTaskLoader<List<FloatingCarContract.TripEnt
     }
 
     @Override
-    public void onCanceled(List<FloatingCarContract.TripEntry> data) {
+    public void onCanceled(List<TripAdapter.TripHolder> data) {
         super.onCanceled(data);
 
         // Release stuff

@@ -1,4 +1,4 @@
-package io.github.malvadeza.floatingcar;
+package io.github.malvadeza.floatingcar.receivers;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -7,6 +7,7 @@ import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
+import io.github.malvadeza.floatingcar.services.SyncService;
 
 
 /**
@@ -24,6 +25,10 @@ public class NetworkStatusReceiver extends BroadcastReceiver {
         if (networkInfo.isConnected()) {
             Log.d(TAG, "Network connected");
             /* Start service for upload data */
+
+            Intent serviceIntent = new Intent(context, SyncService.class);
+            serviceIntent.setAction(SyncService.SYNC_TRIP);
+            context.startService(serviceIntent);
         }
     }
 }
