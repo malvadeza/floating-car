@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             startActivity(intent);
         }
 
-        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         getSupportLoaderManager().initLoader(LOADER_ID, null, this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(MainActivity.this, getString(R.string.bluetooth_not_found_error), Toast.LENGTH_LONG).show();
+                            Toast.makeText(getApplicationContext(), getString(R.string.bluetooth_not_found_error), Toast.LENGTH_LONG).show();
                         }
                     });
 
@@ -114,6 +114,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     if (bluetoothDeviceAddress.isEmpty()) {
                         Intent intent = new Intent(MainActivity.this, BluetoothActivity.class);
                         startActivityForResult(intent, BluetoothActivity.REQUEST_CONNECT_DEVICE);
+                    } else if (!mBtAdapter.isEnabled()){
+                        Intent btIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                        startActivityForResult(btIntent, BluetoothActivity.REQUEST_ENABLE_BT);
                     } else {
                         /**
                          * Here I send the BluetoothDevice to the Service
@@ -158,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                                 @Override
                                 public void run() {
                                     mProgressBar.setVisibility(View.GONE);
-                                    Toast.makeText(MainActivity.this,
+                                    Toast.makeText(getApplicationContext(),
                                             "Connected to " + address + ". Starting Logging",
                                             Toast.LENGTH_LONG).show();
 
@@ -173,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                                 @Override
                                 public void run() {
                                     mProgressBar.setVisibility(View.GONE);
-                                    Toast.makeText(MainActivity.this,
+                                    Toast.makeText(getApplicationContext(),
                                             "Error connecting to bluetooth device",
                                             Toast.LENGTH_LONG).show();
                                 }
@@ -192,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         Log.d(TAG, "onStart");
 
         IntentFilter filter = new IntentFilter(LoggingService.SERVICE_BROADCAST_MESSAGE);
-        LocalBroadcastManager.getInstance(this)
+        LocalBroadcastManager.getInstance(getApplicationContext())
                 .registerReceiver(mBroadcastReceiver, filter);
     }
 
@@ -201,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         super.onStop();
         Log.d(TAG, "onStop");
 
-        LocalBroadcastManager.getInstance(this)
+        LocalBroadcastManager.getInstance(getApplicationContext())
                 .unregisterReceiver(mBroadcastReceiver);
     }
 
@@ -210,12 +213,23 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         super.onActivityResult(requestCode, resultCode, data);
         Log.d(TAG, "onActivityResult");
 
-        if (resultCode == RESULT_OK) {
-            String address = data.getStringExtra(BluetoothActivity.BLUETOOTH_DEVICE_ADDRESS);
+        switch (requestCode) {
+            case RESULT_OK: {
+                String address = data.getStringExtra(BluetoothActivity.BLUETOOTH_DEVICE_ADDRESS);
 
-            Log.d(TAG, "Device address -> " + address);
+                Log.d(TAG, "Device address -> " + address);
 
-            startBluetoothService(address);
+                startBluetoothService(address);
+
+                break;
+            }
+            case BluetoothActivity.REQUEST_ENABLE_BT: {
+                Log.d(TAG, "Bluetooth enabled");
+
+                Toast.makeText(this, "Blutooth enabled. Click to start logging.", Toast.LENGTH_SHORT).show();
+
+                break;
+            }
         }
     }
 
@@ -230,12 +244,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private boolean requestLocationPermissions() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1
-                && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                && ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(getApplicationContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{
                     android.Manifest.permission.ACCESS_FINE_LOCATION,
                     android.Manifest.permission.ACCESS_COARSE_LOCATION
             }, PERMISSION_REQUEST_LOCATION);
+
 
             return true;
         }
@@ -259,7 +274,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public Loader<List<TripAdapter.TripHolder>> onCreateLoader(int id, Bundle args) {
-        return new TripLoader(this);
+        return new TripLoader(getApplicationContext());
     }
 
     @Override

@@ -1,12 +1,9 @@
 package io.github.malvadeza.floatingcar.adapters;
 
 import android.content.Context;
-import android.text.Layout;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.TextView;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -38,7 +35,8 @@ public class TripAdapter extends ArrayAdapter<TripAdapter.TripHolder> {
 
         private String parseDate(String dateStr) {
             SimpleDateFormat fromDb = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
-            SimpleDateFormat readable = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss", Locale.getDefault());
+            SimpleDateFormat readable = new SimpleDateFormat("EEEE, d MMM HH:mm", Locale.getDefault());
+
             try {
                 Date dateObject = fromDb.parse(dateStr);
 

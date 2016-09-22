@@ -40,7 +40,6 @@ public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
 
             if (loader != null) {
                 loader.onContentChanged();
-                ;
             }
         }
     }
@@ -51,17 +50,10 @@ public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
 
     @Override
     public List<TripAdapter.TripHolder> loadInBackground() {
-        FloatingCarDbHelper dbHelper = new FloatingCarDbHelper(getContext());
+        FloatingCarDbHelper dbHelper = FloatingCarDbHelper.getInstance(getContext());
         SQLiteDatabase db = dbHelper.getReadableDatabase();
 
         List<TripAdapter.TripHolder> ret = new ArrayList<>();
-
-//        Cursor cursor = db.query(FloatingCarContract.TripEntry.TABLE_NAME,
-//                new String[]{
-//                        FloatingCarContract.TripEntry._ID,
-//                        FloatingCarContract.TripEntry.STARTED_AT,
-//                        FloatingCarContract.TripEntry.FINISHED_AT,
-//                }, null, null, null, null, FloatingCarContract.TripEntry.STARTED_AT + " DESC");
 
         Cursor cursor = db.rawQuery(
                 "SELECT "

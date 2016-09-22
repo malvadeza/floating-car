@@ -1,9 +1,5 @@
 package io.github.malvadeza.floatingcar.bluetooth;
 
-/**
- * Created by tonho on 09/09/2016.
- */
-
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
