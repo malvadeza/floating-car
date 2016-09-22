@@ -23,7 +23,7 @@ import android.widget.Toast;
 public class BluetoothActivity extends AppCompatActivity {
     private static final String TAG = BluetoothActivity.class.getSimpleName();
 
-    private static final int REQUEST_ENABLE_BT = 300;
+    public static final int REQUEST_ENABLE_BT = 300;
     public static final int REQUEST_CONNECT_DEVICE = 301;
 
     public static final String BLUETOOTH_DEVICE_ADDRESS =

@@ -42,7 +42,9 @@ public class LoggingThread implements Runnable,
     private static final String TAG = LoggingThread.class.getSimpleName();
     private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
 
-    private final WeakReference<LoggingService> loggingServiceReference;
+    private static final int UPDATE_TIME =  2 * 1000;
+
+    private final WeakReference<LoggingService> mLoggingServiceReference;
     private final SQLiteDatabase mDb;
 
     private SensorManager mSensorManager;
@@ -58,7 +60,6 @@ public class LoggingThread implements Runnable,
 
     private Location mLastLocation;
 
-    private long mLastAccelerometerRead;
     private float mAccelerometerX;
     private float mAccelerometerY;
     private float mAccelerometerZ;
@@ -68,11 +69,10 @@ public class LoggingThread implements Runnable,
     }
 
     public LoggingThread(LoggingService service, BluetoothSocket btSocket) {
-        loggingServiceReference = new WeakReference<LoggingService>(service);
+        mLoggingServiceReference = new WeakReference<LoggingService>(service);
         mBtSocket = btSocket;
-        mDb = new FloatingCarDbHelper(service).getWritableDatabase();
+        mDb = FloatingCarDbHelper.getInstance(service).getWritableDatabase();
 
-        // TODO: use guava Hashing to generate this
         mTripSha = Hashing.sha256().hashString(Long.toString(System.currentTimeMillis()), StandardCharsets.UTF_8).toString();
         ContentValues trip = new ContentValues();
         trip.put(FloatingCarContract.TripEntry.STARTED_AT, formatter.format(new Date()));
@@ -95,18 +95,18 @@ public class LoggingThread implements Runnable,
             Log.e(TAG, "Error", e);
             e.printStackTrace();
         }
-
-        setupObd();
     }
 
     @Override
     public void run() {
+        setupObd();
+
         while (shouldBeLogging) {
             try {
-                Thread.sleep(2 * 1000);
+                Thread.sleep(UPDATE_TIME);
 
-                // TODO: use guava Hashing to generate this
                 final String sampleSha = Hashing.sha256().hashString(Long.toString(System.currentTimeMillis()), StandardCharsets.UTF_8).toString();
+
                 ContentValues sample = new ContentValues();
                 sample.put(FloatingCarContract.SampleEntry.TIMESTAMP, formatter.format(new Date()));
                 sample.put(FloatingCarContract.SampleEntry.SHA_256, sampleSha);
@@ -118,9 +118,14 @@ public class LoggingThread implements Runnable,
                 ContentValues phoneData = createPhoneDataEntry(sampleSha);
                 mDb.insert(FloatingCarContract.PhoneDataEntry.TABLE_NAME, null, phoneData);
 
+                final long time = System.currentTimeMillis();
                 /* for every OBD value do this */
                 final int speed = getSpeed();
                 final int rpm = getRPM();
+
+                final long deltaTime = System.currentTimeMillis() - time;
+
+                Log.d(TAG, "Comm delay -> " + deltaTime);
 
                 ContentValues obdSpeed = new ContentValues();
                 obdSpeed.put(FloatingCarContract.OBDDataEntry.PID, "01 0D");
@@ -150,9 +155,18 @@ public class LoggingThread implements Runnable,
                 new String[]{mTripSha}
         );
 
-        LoggingService service = loggingServiceReference.get();
+        LoggingService service = mLoggingServiceReference.get();
         if (service != null) {
             service.mBroadcastManager.sendBroadcast(new Intent(LoggingService.SERVICE_NEW_TRIP));
+        }
+
+        try {
+            mInputStream.close();
+            mOutputStream.close();
+
+            mBtSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         Log.d(TAG, "Finished logging");
@@ -252,7 +266,7 @@ public class LoggingThread implements Runnable,
     }
 
     private void sendInformationBroadcast(int speedValue, int rpmValue) {
-        LoggingService service = loggingServiceReference.get();
+        LoggingService service = mLoggingServiceReference.get();
 
         Intent intent = new Intent(LoggingService.SERVICE_BROADCAST_MESSAGE);
         intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_NEW_DATA);
@@ -275,12 +289,10 @@ public class LoggingThread implements Runnable,
             phoneData.put(FloatingCarContract.PhoneDataEntry.LONGITUDE, Double.toString(mLastLocation.getLongitude()));
         }
 
-        final long deltaTime = System.currentTimeMillis() - mLastAccelerometerRead;
-        if (deltaTime <= 1000) {
-            phoneData.put(FloatingCarContract.PhoneDataEntry.ACCELEROMETER_X, mAccelerometerX);
-            phoneData.put(FloatingCarContract.PhoneDataEntry.ACCELEROMETER_Y, mAccelerometerY);
-            phoneData.put(FloatingCarContract.PhoneDataEntry.ACCELEROMETER_Z, mAccelerometerZ);
-        }
+        phoneData.put(FloatingCarContract.PhoneDataEntry.ACCELEROMETER_X, mAccelerometerX);
+        phoneData.put(FloatingCarContract.PhoneDataEntry.ACCELEROMETER_Y, mAccelerometerY);
+        phoneData.put(FloatingCarContract.PhoneDataEntry.ACCELEROMETER_Z, mAccelerometerZ);
+
 
         phoneData.put(FloatingCarContract.PhoneDataEntry.SHA_SAMPLE, sampleSha);
 
@@ -297,7 +309,7 @@ public class LoggingThread implements Runnable,
     public void onConnected(@Nullable Bundle bundle) {
         Log.d(TAG, "onConnected");
 
-        LoggingService service = loggingServiceReference.get();
+        LoggingService service = mLoggingServiceReference.get();
 
         if (service == null) return;
 
@@ -321,7 +333,7 @@ public class LoggingThread implements Runnable,
     public void onLocationChanged(Location location) {
         Log.d(TAG, "onLocationChanged");
 
-        LoggingService service = loggingServiceReference.get();
+        LoggingService service = mLoggingServiceReference.get();
 
         if (service == null) return;
 
@@ -334,7 +346,7 @@ public class LoggingThread implements Runnable,
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.d(TAG, "onConnectionFailed");
 
-        LoggingService service = loggingServiceReference.get();
+        LoggingService service = mLoggingServiceReference.get();
 
         if (service == null) return;
 
@@ -355,7 +367,6 @@ public class LoggingThread implements Runnable,
         Sensor sensor = event.sensor;
 
         if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            mLastAccelerometerRead = System.currentTimeMillis();
             mAccelerometerX = event.values[0];
             mAccelerometerY = event.values[1];
             mAccelerometerZ = event.values[2];
