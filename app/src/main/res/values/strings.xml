@@ -6,4 +6,7 @@
     <string name="bluetooth_not_found_error">Couldn\'t find a Bluetooth Adapter</string>
     <string name="bluetooth_not_enabled">Bluetooth not enabled.</string>
     <string name="notification_content_title">Logging your trip</string>
+    <string name="bluetooth_connected_starting_logging">Connected to %1$s:%2$s. Starting to log.</string>
+    <string name="blueooth_connecting_errror">Error connecting to bluetooth device %1$s:%2$s.</string>
+    <string name="bluetooth_enabled_message">Bluetooth enabled. Click to start logging.</string>
 </resources>

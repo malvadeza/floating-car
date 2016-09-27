@@ -201,7 +201,7 @@ public class LoggingService extends Service {
     public static class BluetoothHandler extends Handler {
         private final WeakReference<LoggingService> loggingServiceReference;
 
-        public BluetoothHandler(LoggingService service) {
+        private BluetoothHandler(LoggingService service) {
             loggingServiceReference = new WeakReference<LoggingService>(service);
         }
 
@@ -215,8 +215,9 @@ public class LoggingService extends Service {
 
             switch (msg.what) {
                 case BluetoothConnection.BLUETOOTH_CONNECTING_DEVICE: {
-                    // Connecting to device
-                    // BLUETOOTH_TARGET_DEVICE contains the device name:macaddress
+                    String name = msg.getData().getString(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_NAME);
+                    String address = msg.getData().getString(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS);
+
                     Intent intent = new Intent(LoggingService.SERVICE_BROADCAST_MESSAGE);
                     intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_CONNECTING);
 
@@ -225,14 +226,13 @@ public class LoggingService extends Service {
                     break;
                 }
                 case BluetoothConnection.BLUETOOTH_CONNECTED_DEVICE: {
-                    // Connected to device
-                    // send broadcast to activity
-                    // BLUETOOTH_TARGET_DEVICE contains the device name:macaddress
-                    String address = msg.getData().getString(BluetoothConnection.BLUETOOTH_TARGET_DEVICE);
+                    String name = msg.getData().getString(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_NAME);
+                    String address = msg.getData().getString(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS);
 
                     Intent intent = new Intent(LoggingService.SERVICE_BROADCAST_MESSAGE);
                     intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_CONNECTED);
-                    intent.putExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE, address);
+                    intent.putExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_NAME, name);
+                    intent.putExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS, address);
 
                     service.mBroadcastManager.sendBroadcast(intent);
 

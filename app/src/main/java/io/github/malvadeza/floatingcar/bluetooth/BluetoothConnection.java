@@ -19,8 +19,10 @@ public class BluetoothConnection {
     public static final int BLUETOOTH_STATE_CHANGE = 3;
     public static final int BLUETOOTH_CONNECTION_ERROR = 4;
 
-    public static final String BLUETOOTH_TARGET_DEVICE =
-            "io.github.malvadeza.floatingcar.bluetooth.target_device";
+    public static final String BLUETOOTH_TARGET_DEVICE_NAME =
+            "io.github.malvadeza.floatingcar.bluetooth.target_device_name";
+    public static final String BLUETOOTH_TARGET_DEVICE_ADDRESS =
+            "io.github.malvadeza.floatingcar.bluetooth.target_device_address";
 
     public static final int BLUETOOTH_STATE_NOT_CONNECTED = 0;
     public static final int BLUETOOTH_STATE_CONNECTING = 1;
@@ -46,7 +48,8 @@ public class BluetoothConnection {
 
     public void connect(BluetoothDevice btDevice) {
         Bundle bundle = new Bundle();
-        bundle.putString(BLUETOOTH_TARGET_DEVICE, btDevice.getName() + ":" + btDevice.getAddress());
+        bundle.putString(BLUETOOTH_TARGET_DEVICE_NAME, btDevice.getName());
+        bundle.putString(BLUETOOTH_TARGET_DEVICE_ADDRESS, btDevice.getAddress());
 
         Message msg = mHandler.obtainMessage(BLUETOOTH_CONNECTING_DEVICE);
         msg.setData(bundle);
@@ -67,7 +70,8 @@ public class BluetoothConnection {
         this.btSocket = btSocket;
 
         Bundle bundle = new Bundle();
-        bundle.putString(BLUETOOTH_TARGET_DEVICE, btDevice.getAddress());
+        bundle.putString(BLUETOOTH_TARGET_DEVICE_NAME, btDevice.getName());
+        bundle.putString(BLUETOOTH_TARGET_DEVICE_ADDRESS, btDevice.getAddress());
 
         Message msg = mHandler.obtainMessage(BLUETOOTH_CONNECTED_DEVICE);
         msg.setData(bundle);
@@ -120,7 +124,15 @@ public class BluetoothConnection {
             } catch (IOException e) {
                 Log.e(TAG, "ConnectTread.run() -> Socket connection failed", e);
 
-                mHandler.obtainMessage(BLUETOOTH_CONNECTION_ERROR).sendToTarget();
+                Bundle bundle = new Bundle();
+                bundle.putString(BLUETOOTH_TARGET_DEVICE_NAME, mBtDevice.getName());
+                bundle.putString(BLUETOOTH_TARGET_DEVICE_ADDRESS, mBtDevice.getAddress());
+
+
+                Message msg = mHandler.obtainMessage(BLUETOOTH_CONNECTION_ERROR);
+                msg.setData(bundle);
+
+                mHandler.sendMessage(msg);
 
                 try {
                     mBtSocket.close();

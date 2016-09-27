@@ -57,9 +57,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         Log.d(TAG, "onCreate");
 
         if (LoggingService.isRunning()) {
-            /**
-             * Should start Details activity
-             */
             Intent intent = new Intent(this, LoggingDetailsActivity.class);
             startActivity(intent);
         }
@@ -142,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
                 if (intent.getAction().equals(LoggingService.SERVICE_BROADCAST_MESSAGE)) {
                     switch (intent.getStringExtra(LoggingService.SERVICE_MESSAGE)) {
-                        case LoggingService.SERVICE_CONNECTING:
+                        case LoggingService.SERVICE_CONNECTING: {
                             Log.d(TAG, "Service connecting");
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -151,9 +148,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                                 }
                             });
                             break;
-                        case LoggingService.SERVICE_CONNECTED:
+                        }
+                        case LoggingService.SERVICE_CONNECTED: {
                             Log.d(TAG, "Service connected");
-                            final String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE);
+                            final String name = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_NAME);
+                            final String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS);
 
                             mSharedPreferences.edit().putString(getString(R.string.bluetooth_device_key), address).apply();
 
@@ -162,7 +161,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                                 public void run() {
                                     mProgressBar.setVisibility(View.GONE);
                                     Toast.makeText(getApplicationContext(),
-                                            "Connected to " + address + ". Starting Logging",
+                                            String.format(getString(R.string.bluetooth_connected_starting_logging),
+                                                    name, address),
                                             Toast.LENGTH_LONG).show();
 
                                     Intent intent = new Intent(MainActivity.this, LoggingDetailsActivity.class);
@@ -170,18 +170,24 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                                 }
                             });
                             break;
-                        case LoggingService.SERVICE_BLUETOOTH_ERROR:
+                        }
+                        case LoggingService.SERVICE_BLUETOOTH_ERROR: {
                             Log.d(TAG, "Service bluetooth error");
+                            final String name = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_NAME);
+                            final String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS);
+
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     mProgressBar.setVisibility(View.GONE);
                                     Toast.makeText(getApplicationContext(),
-                                            "Error connecting to bluetooth device",
+                                            String.format(getString(R.string.blueooth_connecting_errror),
+                                                    name, address),
                                             Toast.LENGTH_LONG).show();
                                 }
                             });
                             break;
+                        }
 
                     }
                 }
@@ -226,7 +232,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             case BluetoothActivity.REQUEST_ENABLE_BT: {
                 Log.d(TAG, "Bluetooth enabled");
 
-                Toast.makeText(this, "Blutooth enabled. Click to start logging.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.bluetooth_enabled_message, Toast.LENGTH_SHORT).show();
 
                 break;
             }
