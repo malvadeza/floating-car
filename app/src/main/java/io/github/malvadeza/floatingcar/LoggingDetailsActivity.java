@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.LocalBroadcastManager;
@@ -32,11 +33,9 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
     private TextView mAccXView;
     private TextView mAccYView;
     private TextView mAccZView;
+    private TextView mGForce;
     private TextView mSpeedView;
     private TextView mRPMView;
-    private TextView mThrottleView;
-    private TextView mTemperatureView;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,11 +55,10 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
         mAccXView = (TextView) findViewById(R.id.xAxis);
         mAccYView = (TextView) findViewById(R.id.yAxis);
         mAccZView = (TextView) findViewById(R.id.zAxis);
+        mGForce = (TextView) findViewById(R.id.gForce);
 
         mSpeedView = (TextView) findViewById(R.id.vehicleSpeed);
         mRPMView = (TextView) findViewById(R.id.engineRpm);
-        mTemperatureView = (TextView) findViewById(R.id.engineTemperature);
-        mThrottleView = (TextView) findViewById(R.id.throttlePosition);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.stop_logging);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -81,19 +79,12 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equals(LoggingService.SERVICE_BROADCAST_MESSAGE)) {
-                    /**
-                     * Here I should receive details from the Logging service
-                     * such as GPS location and some data from OBD (SPEED RPM and like this)
-                     */
-
                     switch (intent.getStringExtra(LoggingService.SERVICE_MESSAGE)) {
                         case LoggingService.SERVICE_NEW_DATA:
                             Log.d(TAG, "Received new data");
                             final Location location = intent.getParcelableExtra(LoggingService.SERVICE_LOCATION_LATLNG);
                             final int speed = intent.getIntExtra(LoggingService.SERVICE_DATA_SPEED, 0);
                             final int rpm = intent.getIntExtra(LoggingService.SERVICE_DATA_RPM, 0);
-//                            final String throttle = intent.getStringExtra(LoggingService.SERVICE_DATA_THROTTLE);
-//                            final String temp = intent.getStringExtra(LoggingService.SERVICE_DATA_TEMPERATURE);
 
                             final double accX = intent.getFloatExtra(LoggingService.SERVICE_ACCELEROMETER_X, 0);
                             final double accY = intent.getFloatExtra(LoggingService.SERVICE_ACCELEROMETER_Y, 0);
@@ -114,12 +105,14 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
 
                                     mSpeedView.setText(speed + " km/h");
                                     mRPMView.setText(rpm + " rpm");
-//                                    mThrottleView.setText(throttle);
-//                                    mTemperatureView.setText(temp + " °C");
 
                                     mAccXView.setText(String.format("%.4f", accX));
                                     mAccYView.setText(String.format("%.4f", accY));
                                     mAccZView.setText(String.format("%.4f", accZ));
+
+                                    double gForce = Math.sqrt(accX*accX + accY*accY + accZ*accZ) - SensorManager.STANDARD_GRAVITY;
+
+                                    mGForce.setText(String.format("%.4f", gForce));
                                 }
                             });
                             break;

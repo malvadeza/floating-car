@@ -20,7 +20,6 @@ import java.util.Locale;
 import io.github.malvadeza.floatingcar.LoggingService;
 import io.github.malvadeza.floatingcar.adapters.TripAdapter;
 
-// TODO: Change from TripEntry to another class
 public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
     private static final String TAG = TripLoader.class.getSimpleName();
     private BroadcastReceiver mBroadcastReceiver;

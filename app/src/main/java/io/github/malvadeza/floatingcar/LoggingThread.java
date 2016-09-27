@@ -268,6 +268,8 @@ public class LoggingThread implements Runnable,
     private void sendInformationBroadcast(int speedValue, int rpmValue) {
         LoggingService service = mLoggingServiceReference.get();
 
+        if (service == null) return;
+
         Intent intent = new Intent(LoggingService.SERVICE_BROADCAST_MESSAGE);
         intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_NEW_DATA);
         intent.putExtra(LoggingService.SERVICE_LOCATION_LATLNG, mLastLocation);

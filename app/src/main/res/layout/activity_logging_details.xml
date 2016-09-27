@@ -130,6 +130,20 @@
                 android:layout_height="wrap_content">
 
                 <TextView
+                    android:id="@+id/gForce"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_span="2"
+                    android:gravity="center_horizontal"
+                    android:text="---"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
+            </TableRow>
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_span="2"
@@ -157,31 +171,9 @@
                     android:text="RPM"
                     android:textAppearance="?android:attr/textAppearanceLarge" />
             </TableRow>
-
-            <TableRow
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/throttlePosition"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:text="THROTTLE"
-                    android:textAppearance="?android:attr/textAppearanceLarge" />
-
-                <TextView
-                    android:id="@+id/engineTemperature"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:text="TEMP"
-                    android:textAppearance="?android:attr/textAppearanceLarge" />
-            </TableRow>
-
         </TableLayout>
     </LinearLayout>
-    
+
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/stop_logging"
         android:layout_width="wrap_content"
