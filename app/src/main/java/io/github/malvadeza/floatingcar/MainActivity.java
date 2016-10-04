@@ -115,14 +115,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         Intent btIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                         startActivityForResult(btIntent, BluetoothActivity.REQUEST_ENABLE_BT);
                     } else {
-                        /**
-                         * Here I send the BluetoothDevice to the Service
-                         * The service then tries to connect to the device,
-                         * if it is unable to connect, it should return to
-                         * broadcast receiver with an error code informing
-                         * what was the error
-                         */
-
                         startBluetoothService(bluetoothDeviceAddress);
                     }
                 } else {
@@ -135,11 +127,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.d(TAG, "Received broadcast from service");
+                Log.d(TAG, "Received broadcast from Service");
 
                 if (intent.getAction().equals(LoggingService.SERVICE_BROADCAST_MESSAGE)) {
                     switch (intent.getStringExtra(LoggingService.SERVICE_MESSAGE)) {
-                        case LoggingService.SERVICE_CONNECTING: {
+                        case LoggingService.SERVICE_BLUETOOTH_CONNECTING: {
                             Log.d(TAG, "Service connecting");
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -149,7 +141,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                             });
                             break;
                         }
-                        case LoggingService.SERVICE_CONNECTED: {
+                        case LoggingService.SERVICE_BLUETOOTH_CONNECTED: {
                             Log.d(TAG, "Service connected");
                             final String name = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_NAME);
                             final String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS);
@@ -172,6 +164,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                             break;
                         }
                         case LoggingService.SERVICE_BLUETOOTH_ERROR: {
+                            // TODO: Should open BluetoothActivity to possibly select new device
                             Log.d(TAG, "Service bluetooth error");
                             final String name = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_NAME);
                             final String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS);

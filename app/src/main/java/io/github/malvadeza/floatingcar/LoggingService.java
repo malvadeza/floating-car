@@ -28,7 +28,6 @@ import io.github.malvadeza.floatingcar.bluetooth.BluetoothConnection;
 public class LoggingService extends Service {
     private static final String TAG = LoggingService.class.getSimpleName();
 
-
     private static boolean RUNNING = false;
 
     public static final String SERVICE_START =
@@ -43,7 +42,7 @@ public class LoggingService extends Service {
             "io.github.malvadeza.floatingcar.logging_service.service_started";
     public static final String SERVICE_NEW_DATA =
             "io.github.malvadeza.floatingcar.logging_service.location_changed";
-    public static final String SERVICE_NEW_TRIP =
+    public static final String SERVICE_NEW_TRIP_DATA =
             "io.github.malvadeza.floatingcar.logging_service.new_trip";
     public static final String SERVICE_LOCATION_LATLNG =
             "io.github.malvadeza.floatingcar.logging_service.location_latlng";
@@ -63,10 +62,10 @@ public class LoggingService extends Service {
             "io.github.malvadeza.floatingcar.logging_service.data_temperature";
     public static final String SERVICE_LOCATION_ERROR =
             "io.github.malvadeza.floatingcar.logging_service.location_latlng";
-    public static final String SERVICE_CONNECTING =
-            "io.github.malvadeza.floatingcar.logging_service.service_connecting";
-    public static final String SERVICE_CONNECTED =
-            "io.github.malvadeza.floatingcar.logging_service.service_connected";
+    public static final String SERVICE_BLUETOOTH_CONNECTING =
+            "io.github.malvadeza.floatingcar.logging_service.service_bluetooth_connecting";
+    public static final String SERVICE_BLUETOOTH_CONNECTED =
+            "io.github.malvadeza.floatingcar.logging_service.service_bluetooth_connected";
     public static final String SERVICE_BLUETOOTH_ERROR =
             "io.github.malvadeza.floatingcar.logging_service.service_bluetooth_error";
     public static final String SERVICE_MESSAGE =
@@ -219,7 +218,7 @@ public class LoggingService extends Service {
                     String address = msg.getData().getString(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS);
 
                     Intent intent = new Intent(LoggingService.SERVICE_BROADCAST_MESSAGE);
-                    intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_CONNECTING);
+                    intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_BLUETOOTH_CONNECTING);
 
                     service.mBroadcastManager.sendBroadcast(intent);
 
@@ -230,7 +229,7 @@ public class LoggingService extends Service {
                     String address = msg.getData().getString(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS);
 
                     Intent intent = new Intent(LoggingService.SERVICE_BROADCAST_MESSAGE);
-                    intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_CONNECTED);
+                    intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_BLUETOOTH_CONNECTED);
                     intent.putExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_NAME, name);
                     intent.putExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS, address);
 

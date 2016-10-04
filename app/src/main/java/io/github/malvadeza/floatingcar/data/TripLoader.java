@@ -10,12 +10,8 @@ import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.LocalBroadcastManager;
 
 import java.lang.ref.WeakReference;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import io.github.malvadeza.floatingcar.LoggingService;
 import io.github.malvadeza.floatingcar.adapters.TripAdapter;
@@ -60,7 +56,7 @@ public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
                         + FloatingCarContract.TripEntry.STARTED_AT + ", "
                         + FloatingCarContract.TripEntry.FINISHED_AT + ", "
                         + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256 + ", "
-                        + "count(*) as " + FloatingCarContract.TripEntry._COUNT
+                        + "COUNT(*) as " + FloatingCarContract.TripEntry._COUNT
                         + " FROM "
                         + FloatingCarContract.TripEntry.TABLE_NAME
                         + " JOIN "
@@ -128,7 +124,7 @@ public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
 
         if (mBroadcastReceiver == null) {
             mBroadcastReceiver = new LoaderReceiver(this);
-            IntentFilter filter = new IntentFilter(LoggingService.SERVICE_NEW_TRIP);
+            IntentFilter filter = new IntentFilter(LoggingService.SERVICE_NEW_TRIP_DATA);
 
             LocalBroadcastManager.getInstance(getContext())
                     .registerReceiver(mBroadcastReceiver, filter);
