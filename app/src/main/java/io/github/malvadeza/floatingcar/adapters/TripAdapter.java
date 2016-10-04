@@ -21,10 +21,10 @@ public class TripAdapter extends ArrayAdapter<TripAdapter.TripHolder> {
     }
 
     public static class TripHolder {
-        public final long mId;
-        public final String mStartedAt;
-        public final String mFinishedAt;
-        public final int mSamples;
+        private final long mId;
+        private final String mStartedAt;
+        private final String mFinishedAt;
+        private final int mSamples;
 
         public TripHolder(long id, String startedAt, String finishedAt, int samples) {
             mId = id;
