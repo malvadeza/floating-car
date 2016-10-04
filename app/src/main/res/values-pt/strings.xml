@@ -4,6 +4,6 @@
     <string name="bluetooth_not_enabled">Bluetooth não ativado.</string>
     <string name="notification_content_title">Salvando dados de sua viagem</string>
     <string name="bluetooth_enabled_message">Bluetooth ativado. Click para iniciar captura.</string>
-    <string name="bluetooth_connected_starting_logging">Conectado à %1$s:%2$s. Iniciando captura.</string>
-    <string name="blueooth_connecting_errror">Erro ao conectar ao dispositivo bluetooth %1$s:%2$s.</string>
+    <string name="bluetooth_connected_starting_logging">Conectado à %1$s - %2$s. Iniciando captura.</string>
+    <string name="blueooth_connecting_errror">Erro ao conectar ao dispositivo bluetooth %1$s - %2$s.</string>
 </resources>
