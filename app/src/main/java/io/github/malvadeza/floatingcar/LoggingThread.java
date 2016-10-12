@@ -81,7 +81,7 @@ public class LoggingThread implements Runnable,
         // TODO: Test if insert successful
         mDb.insert(FloatingCarContract.TripEntry.TABLE_NAME, null, trip);
 
-        service.mBroadcastManager.sendBroadcast(new Intent(LoggingService.SERVICE_NEW_TRIP));
+        service.mBroadcastManager.sendBroadcast(new Intent(LoggingService.SERVICE_NEW_TRIP_DATA));
 
         mSensorManager = (SensorManager) service.getSystemService(Context.SENSOR_SERVICE);
         mSensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -157,7 +157,7 @@ public class LoggingThread implements Runnable,
 
         LoggingService service = mLoggingServiceReference.get();
         if (service != null) {
-            service.mBroadcastManager.sendBroadcast(new Intent(LoggingService.SERVICE_NEW_TRIP));
+            service.mBroadcastManager.sendBroadcast(new Intent(LoggingService.SERVICE_NEW_TRIP_DATA));
         }
 
         try {

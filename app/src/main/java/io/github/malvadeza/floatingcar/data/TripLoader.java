@@ -84,7 +84,6 @@ public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
                 final String finishedAtStr = cursor.getString(finishedAtIndex);
                 final int count = cursor.getInt(countIndex);
 
-                // TODO: Add Trip object here
                 ret.add(new TripAdapter.TripHolder(id, startedAtStr, finishedAtStr, count));
             }
         } finally {
