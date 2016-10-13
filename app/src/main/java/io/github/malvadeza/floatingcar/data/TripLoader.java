@@ -52,27 +52,29 @@ public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
 
         Cursor cursor = db.rawQuery(
                 "SELECT "
-                        + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry._ID + ", "
-                        + FloatingCarContract.TripEntry.STARTED_AT + ", "
-                        + FloatingCarContract.TripEntry.FINISHED_AT + ", "
-                        + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256 + ", "
-                        + "COUNT(*) as " + FloatingCarContract.TripEntry._COUNT
-                        + " FROM "
-                        + FloatingCarContract.TripEntry.TABLE_NAME
-                        + " JOIN "
-                        + FloatingCarContract.SampleEntry.TABLE_NAME
-                        + " ON "
-                        + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256
-                        + " = "
-                        + FloatingCarContract.SampleEntry.TABLE_NAME + "." + FloatingCarContract.SampleEntry.SHA_TRIP
-                        + " GROUP BY "
-                        + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256
-                        + " ORDER BY "
-                        + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.STARTED_AT + " DESC ",
+                + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry._ID + ", "
+                + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256 + ", "
+                + FloatingCarContract.TripEntry.STARTED_AT + ", "
+                + FloatingCarContract.TripEntry.FINISHED_AT + ", "
+                + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256 + ", "
+                + "COUNT(*) as " + FloatingCarContract.TripEntry._COUNT
+                + " FROM "
+                + FloatingCarContract.TripEntry.TABLE_NAME
+                + " JOIN "
+                + FloatingCarContract.SampleEntry.TABLE_NAME
+                + " ON "
+                + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256
+                + " = "
+                + FloatingCarContract.SampleEntry.TABLE_NAME + "." + FloatingCarContract.SampleEntry.SHA_TRIP
+                + " GROUP BY "
+                + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256
+                + " ORDER BY "
+                + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.STARTED_AT + " DESC ",
                 null
         );
 
         final int idIndex = cursor.getColumnIndex(FloatingCarContract.TripEntry._ID);
+        final int shaIndex = cursor.getColumnIndex(FloatingCarContract.TripEntry.SHA_256);
         final int startedAtIndex = cursor.getColumnIndex(FloatingCarContract.TripEntry.STARTED_AT);
         final int finishedAtIndex = cursor.getColumnIndex(FloatingCarContract.TripEntry.FINISHED_AT);
         final int countIndex = cursor.getColumnIndex(FloatingCarContract.TripEntry._COUNT);
@@ -80,11 +82,12 @@ public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
         try {
             while (cursor.moveToNext()) {
                 final long id = cursor.getLong(idIndex);
+                final String sha = cursor.getString(shaIndex);
                 final String startedAtStr = cursor.getString(startedAtIndex);
                 final String finishedAtStr = cursor.getString(finishedAtIndex);
                 final int count = cursor.getInt(countIndex);
 
-                ret.add(new TripAdapter.TripHolder(id, startedAtStr, finishedAtStr, count));
+                ret.add(new TripAdapter.TripHolder(id, sha, startedAtStr, finishedAtStr, count));
             }
         } finally {
             cursor.close();

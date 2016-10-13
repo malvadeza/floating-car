@@ -26,8 +26,8 @@
             android:name=".LoggingService"
             android:enabled="true"
             android:exported="false" />
-
-        <service android:name=".services.SyncService"
+        <service
+            android:name=".services.SyncService"
             android:enabled="true"
             android:exported="false" />
 
@@ -46,6 +46,11 @@
                 <action android:name="android.net.wifi.STATE_CHANGE" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name=".TripDetailsActivity"
+            android:label="@string/title_activity_trip_details"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>

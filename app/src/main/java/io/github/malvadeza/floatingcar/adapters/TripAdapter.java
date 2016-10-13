@@ -1,6 +1,7 @@
 package io.github.malvadeza.floatingcar.adapters;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,8 +20,9 @@ public class TripAdapter extends ArrayAdapter<TripAdapter.TripHolder> {
         super(context, R.layout.trip_list_item);
     }
 
+    @NonNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(int position, View convertView, @NonNull ViewGroup parent) {
         View view = convertView;
 
         if (view == null) {
@@ -37,6 +39,7 @@ public class TripAdapter extends ArrayAdapter<TripAdapter.TripHolder> {
             startDate.setText(getContext().getString(R.string.start_date, trip.getMonth(), trip.getDate()));
 
             TextView duration = (TextView) view.findViewById(R.id.trip_duration);
+            duration.setText(getContext().getString(R.string.trip_duration, trip.getDuration()));
 
             TextView samples = (TextView) view.findViewById(R.id.trip_samples);
             samples.setText(getContext().getString(R.string.trip_samples, trip.mSamples));
@@ -55,13 +58,15 @@ public class TripAdapter extends ArrayAdapter<TripAdapter.TripHolder> {
         private static final SimpleDateFormat fromDb = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
 
         private final long mId;
+        private final String mSha;
         private final Date mStartedAt;
         private final Date mFinishedAt;
         private final int mSamples;
 
 
-        public TripHolder(long id, String startedAt, String finishedAt, int samples) {
+        public TripHolder(long id, String sha, String startedAt, String finishedAt, int samples) {
             mId = id;
+            mSha = sha;
             mStartedAt = parseDate(startedAt);
             mFinishedAt = parseDate(finishedAt);
             mSamples = samples;
@@ -75,6 +80,21 @@ public class TripAdapter extends ArrayAdapter<TripAdapter.TripHolder> {
 
                 return null;
             }
+        }
+
+        public long getId() {
+            return mId;
+        }
+
+        public String getSha() {
+            return mSha;
+        }
+
+        private String getDuration() {
+            long diff = mFinishedAt.getTime() - mStartedAt.getTime();
+            diff = diff / (60 * 1000) % 60;
+
+            return Long.toString(diff);
         }
 
         private String getMonth() {
