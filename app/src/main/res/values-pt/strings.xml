@@ -5,5 +5,10 @@
     <string name="notification_content_title">Salvando dados de sua viagem</string>
     <string name="bluetooth_enabled_message">Bluetooth ativado. Click para iniciar captura.</string>
     <string name="bluetooth_connected_starting_logging">Conectado à %1$s - %2$s. Iniciando captura.</string>
-    <string name="blueooth_connecting_errror">Erro ao conectar ao dispositivo bluetooth %1$s - %2$s.</string>
+    <string name="bluetooth_connecting_errror">Erro ao conectar ao dispositivo bluetooth %1$s - %2$s.</string>
+    <string name="start_day_time">%1$s, %2$s</string>
+    <string name="start_date">%2$s de %1$s</string>
+    <string name="trip_samples">%1$d amostras</string>
+    <string name="title_activity_trip_details">Detalhes da Viagem</string>
+    <string name="trip_duration">%1$sm</string>
 </resources>

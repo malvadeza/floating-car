@@ -7,6 +7,11 @@
     <string name="bluetooth_not_enabled">Bluetooth not enabled.</string>
     <string name="notification_content_title">Logging your trip</string>
     <string name="bluetooth_connected_starting_logging">Connected to %1$s - %2$s. Starting to log.</string>
-    <string name="blueooth_connecting_errror">Error connecting to bluetooth device %1$s - %2$s.</string>
+    <string name="bluetooth_connecting_errror">Error connecting to bluetooth device %1$s - %2$s.</string>
     <string name="bluetooth_enabled_message">Bluetooth enabled. Click to start logging.</string>
+    <string name="start_day_time">%1$s, %2$s</string>
+    <string name="start_date">%1$s %2$s</string>
+    <string name="trip_samples">%1$d samples</string>
+    <string name="title_activity_trip_details">TripDetailsActivity</string>
+    <string name="trip_duration">%1$sm</string>
 </resources>

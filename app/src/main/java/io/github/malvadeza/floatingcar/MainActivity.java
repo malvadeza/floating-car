@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -77,6 +78,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         ListView listView = (ListView) findViewById(R.id.trip_list);
         listView.setAdapter(mAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                TripAdapter.TripHolder trip = mAdapter.getItem(position);
+
+                Intent intent = new Intent(MainActivity.this, TripDetailsActivity.class);
+                intent.putExtra(TripDetailsActivity.TRIP_SHA, trip.getSha());
+                startActivity(intent);
+            }
+        });
 
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
 
@@ -174,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                                 public void run() {
                                     mProgressBar.setVisibility(View.GONE);
                                     Toast.makeText(getApplicationContext(),
-                                            String.format(getString(R.string.blueooth_connecting_errror),
+                                            String.format(getString(R.string.bluetooth_connecting_errror),
                                                     name, address),
                                             Toast.LENGTH_LONG).show();
                                 }
