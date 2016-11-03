@@ -66,6 +66,9 @@ public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
                 + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256
                 + " = "
                 + FloatingCarContract.SampleEntry.TABLE_NAME + "." + FloatingCarContract.SampleEntry.SHA_TRIP
+                + " WHERE "
+                + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.FINISHED_AT
+                + " NOT NULL "
                 + " GROUP BY "
                 + FloatingCarContract.TripEntry.TABLE_NAME + "." + FloatingCarContract.TripEntry.SHA_256
                 + " ORDER BY "
