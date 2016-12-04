@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -16,14 +17,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif"
-            android:text="Segunda-feira, 11:32"
+            android:text="@string/daytime_placehold_str"
             android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
         <TextView
             android:id="@+id/start_date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="9 de Janeiro" />
+            android:text="@string/date_placehold_str" />
     </LinearLayout>
 
     <LinearLayout
@@ -45,16 +46,16 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_duration_24dp"
-                android:tint="@android:color/darker_gray" />
+                android:tint="@android:color/darker_gray"
+                app:srcCompat="@drawable/ic_duration_24dp" />
 
             <TextView
                 android:id="@+id/trip_duration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:paddingLeft="3dp"
-                android:text="1:35h" />
+                android:paddingStart="3dp"
+                android:text="@string/duration_placehold_str" />
         </LinearLayout>
 
         <LinearLayout
@@ -66,16 +67,16 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_distance_24dp"
-                android:tint="@android:color/darker_gray" />
+                android:tint="@android:color/darker_gray"
+                app:srcCompat="@drawable/ic_distance_24dp" />
 
             <TextView
                 android:id="@+id/trip_distance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:paddingLeft="3dp"
-                android:text="350 km" />
+                android:paddingStart="3dp"
+                android:text="@string/distance_placehold_str" />
         </LinearLayout>
 
         <LinearLayout
@@ -87,16 +88,16 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:src="@drawable/ic_samples_24dp"
-                android:tint="@android:color/darker_gray" />
+                android:tint="@android:color/darker_gray"
+                app:srcCompat="@drawable/ic_samples_24dp" />
 
             <TextView
                 android:id="@+id/trip_samples"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:padding="3dp"
-                android:text="524 samples" />
+                android:paddingStart="3dp"
+                android:text="@string/samples_placehold_str" />
         </LinearLayout>
     </LinearLayout>
 </RelativeLayout>

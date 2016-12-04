@@ -8,7 +8,10 @@
     <string name="bluetooth_connecting_errror">Erro ao conectar ao dispositivo bluetooth %1$s - %2$s.</string>
     <string name="start_day_time">%1$s, %2$s</string>
     <string name="start_date">%2$s de %1$s</string>
-    <string name="trip_samples">%1$d amostras</string>
+    <string name="trip_samples">%1$d amost.</string>
     <string name="title_activity_trip_details">Detalhes da Viagem</string>
-    <string name="trip_duration">%1$sm</string>
+    <string name="trip_duration">%1$s m</string>
+    <string name="vehicle">Veículo</string>
+    <string name="accelerometer">Acelerômetro</string>
+    <string name="location">Localização</string>
 </resources>

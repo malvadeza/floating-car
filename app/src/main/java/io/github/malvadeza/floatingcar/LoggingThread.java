@@ -43,6 +43,7 @@ public class LoggingThread implements Runnable,
         SensorEventListener {
     private static final String TAG = LoggingThread.class.getSimpleName();
     private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
+    private static final float DISTANCE_THRESHOLD = 10;
 
     private static class DatabaseThread extends HandlerThread {
         private Handler mWorkHandler;
@@ -78,6 +79,7 @@ public class LoggingThread implements Runnable,
     private final String mTripSha;
 
     private Location mLastLocation;
+    private Location mSegmentBeginning;
 
     private float mAccelerometerX;
     private float mAccelerometerY;
@@ -162,7 +164,7 @@ public class LoggingThread implements Runnable,
                 mDbThread.post(new Runnable() {
                     @Override
                     public void run() {
-                        // TODO: Test if inserts are successful
+                        // TODO: Check if inserts are successful
                         mDb.insert(FloatingCarContract.SampleEntry.TABLE_NAME, null, sample);
                         mDb.insert(FloatingCarContract.PhoneDataEntry.TABLE_NAME, null, phoneData);
                         mDb.insert(FloatingCarContract.OBDDataEntry.TABLE_NAME, null, obdSpeed);
@@ -183,7 +185,7 @@ public class LoggingThread implements Runnable,
         mDbThread.post(new Runnable() {
             @Override
             public void run() {
-                // TODO: Test if update successful
+                // TODO: Check if update successful
                 mDb.update(FloatingCarContract.TripEntry.TABLE_NAME, trip,
                         FloatingCarContract.TripEntry.SHA_256 + " = ?",
                         new String[]{mTripSha}
@@ -339,7 +341,7 @@ public class LoggingThread implements Runnable,
         return phoneData;
     }
 
-    public synchronized void stopLogging() {
+    protected synchronized void stopLogging() {
         Log.d(TAG, "stopLogging");
 
         shouldBeLogging = false;
@@ -373,9 +375,14 @@ public class LoggingThread implements Runnable,
     public void onLocationChanged(Location location) {
         Log.d(TAG, "onLocationChanged");
 
-        synchronized (this) {
-            mLastLocation = location;
+        mLastLocation = location;
+
+        if (mSegmentBeginning == null) {
+            mSegmentBeginning = mLastLocation;
+        } else if (mSegmentBeginning.distanceTo(mLastLocation) >= DISTANCE_THRESHOLD) {
+            // TODO: Trigger save data
         }
+
     }
 
     @Override
