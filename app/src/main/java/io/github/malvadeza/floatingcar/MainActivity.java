@@ -57,11 +57,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         Log.d(TAG, "onCreate");
 
-        if (LoggingService.isRunning()) {
-            Intent intent = new Intent(this, LoggingDetailsActivity.class);
-            startActivity(intent);
-        }
-
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         getSupportLoaderManager().initLoader(LOADER_ID, null, this);
 
@@ -117,20 +112,19 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 Log.d(TAG, "Start tracking trip");
 
                 if (!LoggingService.isRunning()) {
-                    String bluetoothDeviceAddress = mSharedPreferences.getString(getString(R.string.bluetooth_device_key), "");
-
-                    if (bluetoothDeviceAddress.isEmpty()) {
-                        Intent intent = new Intent(MainActivity.this, BluetoothActivity.class);
-                        startActivityForResult(intent, BluetoothActivity.REQUEST_CONNECT_DEVICE);
-                    } else if (!mBtAdapter.isEnabled()){
+                    if (!mBtAdapter.isEnabled()) {
                         Intent btIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                         startActivityForResult(btIntent, BluetoothActivity.REQUEST_ENABLE_BT);
                     } else {
-                        startBluetoothService(bluetoothDeviceAddress);
+                        String bluetoothDeviceAddress = mSharedPreferences.getString(getString(R.string.bluetooth_device_key), "");
+
+                        if (bluetoothDeviceAddress.isEmpty()) {
+                            Intent intent = new Intent(MainActivity.this, BluetoothActivity.class);
+                            startActivityForResult(intent, BluetoothActivity.REQUEST_CONNECT_DEVICE);
+                        } else {
+                            startBluetoothService(bluetoothDeviceAddress);
+                        }
                     }
-                } else {
-                    Intent intent = new Intent(MainActivity.this, LoggingDetailsActivity.class);
-                    startActivity(intent);
                 }
             }
         });
@@ -210,6 +204,17 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume");
+
+        if (LoggingService.isRunning()) {
+            Intent intent = new Intent(this, LoggingDetailsActivity.class);
+            startActivity(intent);
+        }
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         Log.d(TAG, "onStop");
@@ -260,7 +265,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     android.Manifest.permission.ACCESS_FINE_LOCATION,
                     android.Manifest.permission.ACCESS_COARSE_LOCATION
             }, PERMISSION_REQUEST_LOCATION);
-
 
             return true;
         }

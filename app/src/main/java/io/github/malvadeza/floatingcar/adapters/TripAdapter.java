@@ -2,6 +2,7 @@ package io.github.malvadeza.floatingcar.adapters;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,7 +38,6 @@ public class TripAdapter extends ArrayAdapter<TripAdapter.TripHolder> {
         if (trip != null) {
             TextView startDayTime = (TextView) view.findViewById(R.id.start_day_time);
             startDayTime.setText(getContext().getString(R.string.start_day_time, trip.getDay(), trip.getHour()));
-            Log.d(TAG, "startDayTime -> " + startDayTime.getText());
 
             TextView startDate = (TextView) view.findViewById(R.id.start_date);
             startDate.setText(getContext().getString(R.string.start_date, trip.getMonth(), trip.getDate()));
