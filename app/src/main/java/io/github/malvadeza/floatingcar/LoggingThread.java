@@ -30,10 +30,14 @@ import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
+import io.github.malvadeza.floatingcar.data.Database;
 import io.github.malvadeza.floatingcar.data.FloatingCarContract;
 import io.github.malvadeza.floatingcar.data.FloatingCarDbHelper;
+import io.github.malvadeza.floatingcar.data.ObdValue;
+import io.github.malvadeza.floatingcar.data.obd.ObdReader;
 
 @SuppressWarnings({"MissingPermission"})
 public class LoggingThread implements Runnable,
@@ -42,48 +46,21 @@ public class LoggingThread implements Runnable,
         LocationListener,
         SensorEventListener {
     private static final String TAG = LoggingThread.class.getSimpleName();
-    private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZZ", Locale.getDefault());
     private static final float DISTANCE_THRESHOLD = 10;
-
-    private static class DatabaseThread extends HandlerThread {
-        private Handler mWorkHandler;
-
-        public DatabaseThread(String name) {
-            super(name);
-        }
-
-        public void prepareHandler() {
-            mWorkHandler = new Handler(getLooper());
-        }
-
-        public boolean post(Runnable task) {
-            return mWorkHandler.post(task);
-        }
-    }
 
     private static final int UPDATE_TIME = 2 * 1000;
 
     private final WeakReference<LoggingService> mLoggingServiceReference;
-    private final SQLiteDatabase mDb;
-    private DatabaseThread mDbThread;
+    private final Database mDb;
 
-    private SensorManager mSensorManager;
-    private Sensor mSensorAccelerometer;
-
-    private final BluetoothSocket mBtSocket;
-    private InputStream mInputStream;
-    private OutputStream mOutputStream;
+    private final ObdReader obdReader;
 
     private boolean shouldBeLogging = true;
-
-    private final String mTripSha;
 
     private Location mLastLocation;
     private Location mSegmentBeginning;
 
-    private float mAccelerometerX;
-    private float mAccelerometerY;
-    private float mAccelerometerZ;
+    private float[] mAcc;
 
     public LoggingThread(LoggingService service) {
         this(service, null);
@@ -91,44 +68,20 @@ public class LoggingThread implements Runnable,
 
     public LoggingThread(final LoggingService service, BluetoothSocket btSocket) {
         mLoggingServiceReference = new WeakReference<LoggingService>(service);
-        mBtSocket = btSocket;
-        mDb = FloatingCarDbHelper.getInstance(service).getWritableDatabase();
+        obdReader = new ObdReader(btSocket);
+        mDb = new Database(service);
 
-        mDbThread = new DatabaseThread("DatabaseThread");
-        mDbThread.start();
-        mDbThread.prepareHandler();
+        SensorManager sensorManager = (SensorManager) service.getSystemService(Context.SENSOR_SERVICE);
+        Sensor sensorAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
-        mTripSha = Hashing.sha256().hashString(Long.toString(System.currentTimeMillis()), StandardCharsets.UTF_8).toString();
-        mDbThread.post(new Runnable() {
-            @Override
-            public void run() {
-                ContentValues trip = new ContentValues();
-                trip.put(FloatingCarContract.TripEntry.STARTED_AT, formatter.format(new Date()));
-                trip.put(FloatingCarContract.TripEntry.SHA_256, mTripSha);
-
-                // TODO: Test if insert successful
-                mDb.insert(FloatingCarContract.TripEntry.TABLE_NAME, null, trip);
-                service.mBroadcastManager.sendBroadcast(new Intent(LoggingService.SERVICE_NEW_TRIP_DATA));
-            }
-        });
-
-        mSensorManager = (SensorManager) service.getSystemService(Context.SENSOR_SERVICE);
-        mSensorAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-
-        mSensorManager.registerListener(this, mSensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-
-        try {
-            mInputStream = mBtSocket.getInputStream();
-            mOutputStream = mBtSocket.getOutputStream();
-        } catch (IOException e) {
-            Log.e(TAG, "Error", e);
-            e.printStackTrace();
-        }
+        sensorManager.registerListener(this, sensorAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
     public void run() {
-        setupObd();
+        obdReader.setupObd();
+
+        mDb.startTrip();
 
         while (shouldBeLogging) {
             try {
@@ -136,177 +89,26 @@ public class LoggingThread implements Runnable,
 
                 final long starTime = System.currentTimeMillis();
 
-                final int speed = getSpeed();
-                final int rpm = getRPM();
+                List<ObdValue> obdValues = obdReader.readValues();
 
                 final long deltaTime = System.currentTimeMillis() - starTime;
                 Log.d(TAG, "Comm delay -> " + deltaTime);
 
-                final String sampleSha = Hashing.sha256().hashString(Long.toString(System.currentTimeMillis()), StandardCharsets.UTF_8).toString();
+                mDb.saveSample(mLastLocation, mAcc, obdValues);
 
-                final ContentValues sample = new ContentValues();
-                sample.put(FloatingCarContract.SampleEntry.TIMESTAMP, formatter.format(new Date()));
-                sample.put(FloatingCarContract.SampleEntry.SHA_256, sampleSha);
-                sample.put(FloatingCarContract.SampleEntry.SHA_TRIP, mTripSha);
-
-                final ContentValues phoneData = createPhoneDataEntry(sampleSha);
-
-                final ContentValues obdSpeed = new ContentValues();
-                obdSpeed.put(FloatingCarContract.OBDDataEntry.PID, "01 0D");
-                obdSpeed.put(FloatingCarContract.OBDDataEntry.VALUE, speed);
-                obdSpeed.put(FloatingCarContract.OBDDataEntry.SHA_SAMPLE, sampleSha);
-
-                final ContentValues obdRPM = new ContentValues();
-                obdRPM.put(FloatingCarContract.OBDDataEntry.PID, "01 0C");
-                obdRPM.put(FloatingCarContract.OBDDataEntry.VALUE, rpm);
-                obdRPM.put(FloatingCarContract.OBDDataEntry.SHA_SAMPLE, sampleSha);
-
-                mDbThread.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        // TODO: Check if inserts are successful
-                        mDb.insert(FloatingCarContract.SampleEntry.TABLE_NAME, null, sample);
-                        mDb.insert(FloatingCarContract.PhoneDataEntry.TABLE_NAME, null, phoneData);
-                        mDb.insert(FloatingCarContract.OBDDataEntry.TABLE_NAME, null, obdSpeed);
-                        mDb.insert(FloatingCarContract.OBDDataEntry.TABLE_NAME, null, obdRPM);
-                    }
-                });
-
-                sendInformationBroadcast(speed, rpm);
+                sendInformationBroadcast(obdValues.get(0).getValue(), obdValues.get(1).getValue());
             } catch (InterruptedException e) {
                 Log.e(TAG, "Error", e);
                 e.printStackTrace();
             }
         }
 
-        final ContentValues trip = new ContentValues();
-        trip.put(FloatingCarContract.TripEntry.FINISHED_AT, formatter.format(new Date()));
-
-        mDbThread.post(new Runnable() {
-            @Override
-            public void run() {
-                // TODO: Check if update successful
-                mDb.update(FloatingCarContract.TripEntry.TABLE_NAME, trip,
-                        FloatingCarContract.TripEntry.SHA_256 + " = ?",
-                        new String[]{mTripSha}
-                );
-            }
-        });
-
-        LoggingService service = mLoggingServiceReference.get();
-        if (service != null) {
-            service.mBroadcastManager.sendBroadcast(new Intent(LoggingService.SERVICE_NEW_TRIP_DATA));
-        }
-
-        mDbThread.quitSafely();
-
-        try {
-            mInputStream.close();
-            mOutputStream.close();
-
-            mBtSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        mDb.endTrip();
 
         Log.d(TAG, "Finished logging");
     }
 
-    private void setupObd() {
-        Log.d(TAG, "setupObd");
-
-        try {
-            // Set Defaults
-            mOutputStream.write("AT D\r".getBytes());
-            getResponse();
-
-            // Reset all
-            mOutputStream.write("AT Z\r".getBytes());
-            getResponse();
-
-            // Disable echo
-            mOutputStream.write("AT E0\r".getBytes());
-            getResponse();
-
-            // Disable line feed
-            mOutputStream.write("AT L0\r".getBytes());
-            getResponse();
-
-            // Disable spaces
-            mOutputStream.write("AT S0\r".getBytes());
-            getResponse();
-
-            // Disable headers
-            mOutputStream.write("AT H0\r".getBytes());
-            getResponse();
-        } catch (IOException e) {
-            Log.e(TAG, "Error", e);
-            e.printStackTrace();
-        }
-    }
-
-    private synchronized String getResponse() {
-        Log.d(TAG, "getResponse");
-
-        StringBuilder res = new StringBuilder();
-        byte buffer;
-
-        try {
-            while (((char) (buffer = (byte) mInputStream.read()) != '>')) {
-                res.append((char) buffer);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-        return res.toString().replaceAll("SEARCHING", "").replaceAll("\\s", "");
-    }
-
-    private synchronized int getSpeed() {
-        String command = "01 0D\r";
-
-        try {
-            mOutputStream.write(command.getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        String response = getResponse();
-
-        int ret;
-
-        try {
-            ret = Integer.parseInt(response.substring(4), 16);
-        } catch (Exception e) {
-            ret = 0;
-        }
-
-        return ret;
-    }
-
-    private synchronized int getRPM() {
-        String command = "01 0C\r";
-
-        try {
-            mOutputStream.write(command.getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        String response = getResponse();
-        int ret;
-
-        try {
-            ret = Integer.parseInt(response.substring(4), 16) / 4;
-        } catch (Exception e) {
-            ret = 0;
-        }
-
-        return ret;
-    }
-
-    private void sendInformationBroadcast(int speedValue, int rpmValue) {
+    private void sendInformationBroadcast(String speedValue, String rpmValue) {
         LoggingService service = mLoggingServiceReference.get();
 
         if (service == null) return;
@@ -314,31 +116,13 @@ public class LoggingThread implements Runnable,
         Intent intent = new Intent(LoggingService.SERVICE_BROADCAST_MESSAGE);
         intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_NEW_DATA);
         intent.putExtra(LoggingService.SERVICE_LOCATION_LATLNG, mLastLocation);
-        intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_X, mAccelerometerX);
-        intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_Y, mAccelerometerY);
-        intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_Z, mAccelerometerZ);
+        intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_X, mAcc[0]);
+        intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_Y, mAcc[1]);
+        intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_Z, mAcc[2]);
         intent.putExtra(LoggingService.SERVICE_DATA_SPEED, speedValue);
         intent.putExtra(LoggingService.SERVICE_DATA_RPM, rpmValue);
 
         service.mBroadcastManager.sendBroadcast(intent);
-    }
-
-    @NonNull
-    private ContentValues createPhoneDataEntry(String sampleSha) {
-        ContentValues phoneData = new ContentValues();
-
-        if (mLastLocation != null) {
-            phoneData.put(FloatingCarContract.PhoneDataEntry.LATITUDE, mLastLocation.getLatitude());
-            phoneData.put(FloatingCarContract.PhoneDataEntry.LONGITUDE, mLastLocation.getLongitude());
-        }
-
-        phoneData.put(FloatingCarContract.PhoneDataEntry.ACCELEROMETER_X, mAccelerometerX);
-        phoneData.put(FloatingCarContract.PhoneDataEntry.ACCELEROMETER_Y, mAccelerometerY);
-        phoneData.put(FloatingCarContract.PhoneDataEntry.ACCELEROMETER_Z, mAccelerometerZ);
-
-        phoneData.put(FloatingCarContract.PhoneDataEntry.SHA_SAMPLE, sampleSha);
-
-        return phoneData;
     }
 
     protected synchronized void stopLogging() {
@@ -407,9 +191,7 @@ public class LoggingThread implements Runnable,
         Sensor sensor = event.sensor;
 
         if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            mAccelerometerX = event.values[0];
-            mAccelerometerY = event.values[1];
-            mAccelerometerZ = event.values[2];
+            mAcc = event.values;
         }
     }
 
