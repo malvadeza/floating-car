@@ -18,26 +18,8 @@ import io.github.malvadeza.floatingcar.adapters.TripAdapter;
 
 public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
     private static final String TAG = TripLoader.class.getSimpleName();
-    private BroadcastReceiver mBroadcastReceiver;
 
     private List<TripAdapter.TripHolder> mTrips;
-
-    private static class LoaderReceiver extends BroadcastReceiver {
-        private final WeakReference<TripLoader> loaderReference;
-
-        public LoaderReceiver(TripLoader loader) {
-            loaderReference = new WeakReference<TripLoader>(loader);
-        }
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            TripLoader loader = loaderReference.get();
-
-            if (loader != null) {
-                loader.onContentChanged();
-            }
-        }
-    }
 
     public TripLoader(Context context) {
         super(context);
@@ -127,14 +109,6 @@ public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
             deliverResult(mTrips);
         }
 
-        if (mBroadcastReceiver == null) {
-            mBroadcastReceiver = new LoaderReceiver(this);
-            IntentFilter filter = new IntentFilter(LoggingService.SERVICE_NEW_TRIP_DATA);
-
-            LocalBroadcastManager.getInstance(getContext())
-                    .registerReceiver(mBroadcastReceiver, filter);
-        }
-
         if (takeContentChanged() || mTrips == null) {
             forceLoad();
         }
@@ -148,12 +122,6 @@ public class TripLoader extends AsyncTaskLoader<List<TripAdapter.TripHolder>> {
 
         if (mTrips != null) {
             // Release stuff
-        }
-
-        if (mBroadcastReceiver != null) {
-            LocalBroadcastManager.getInstance(getContext())
-                    .unregisterReceiver(mBroadcastReceiver);
-            mBroadcastReceiver = null;
         }
 
     }

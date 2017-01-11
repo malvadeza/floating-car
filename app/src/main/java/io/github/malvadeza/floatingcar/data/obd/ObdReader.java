@@ -19,30 +19,32 @@ import java.util.List;
 import io.github.malvadeza.floatingcar.data.ObdValue;
 
 public class ObdReader {
+    private static final String TAG = ObdReader.class.getSimpleName();
     private final BluetoothSocket mBtSocket;
-    private List<ObdCommand> obdCommands = new ArrayList<>();
-    private List<ObdCommand> setupCommands = new ArrayList<>();
+    private List<ObdCommand> mObdCommands = new ArrayList<>();
+    private List<ObdCommand> mSetupCommands = new ArrayList<>();
 
     public ObdReader(BluetoothSocket btSocket) {
         mBtSocket = btSocket;
 
-        // Will get from preferences, but will default to Speed and RPM
-        obdCommands.add(new SpeedCommand());
-        obdCommands.add(new RPMCommand());
+        // TODO: Will get from preferences, but will default to Speed and RPM
+        mObdCommands.add(new SpeedCommand());
+        mObdCommands.add(new RPMCommand());
 
         // Set Defaults and Reset all
-        setupCommands.add(new ObdRawCommand("AT D"));
-        setupCommands.add(new ObdRawCommand("AT Z"));
+        mSetupCommands.add(new ObdRawCommand("AT D"));
+        mSetupCommands.add(new ObdRawCommand("AT Z"));
 
-        setupCommands.add(new EchoOffCommand());
-        setupCommands.add(new LineFeedOffCommand());
-        setupCommands.add(new SpacesOffCommand());
-        setupCommands.add(new HeadersOffCommand());
+        mSetupCommands.add(new EchoOffCommand());
+        mSetupCommands.add(new LineFeedOffCommand());
+        mSetupCommands.add(new SpacesOffCommand());
+        mSetupCommands.add(new HeadersOffCommand());
     }
 
     public void setupObd() {
+        Log.d(TAG, "Setting up OBD connection");
         try {
-            for (ObdCommand command: setupCommands) {
+            for (ObdCommand command: mSetupCommands) {
                 command.run(mBtSocket.getInputStream(), mBtSocket.getOutputStream());
             }
         } catch (IOException | InterruptedException  e) {
@@ -51,8 +53,10 @@ public class ObdReader {
     }
 
     public List<ObdValue> readValues() {
+        Log.d(TAG, "Reading values");
+
         List<ObdValue> obdValues = new ArrayList<>();
-        for (ObdCommand command: obdCommands) {
+        for (ObdCommand command: mObdCommands) {
             try {
                 command.run(mBtSocket.getInputStream(), mBtSocket.getOutputStream());
             } catch (IOException | InterruptedException e) {
@@ -63,5 +67,15 @@ public class ObdReader {
         }
 
         return obdValues;
+    }
+
+    public void disconnect() {
+        Log.d(TAG, "Disconnecting bluetooth");
+
+        try {
+            mBtSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

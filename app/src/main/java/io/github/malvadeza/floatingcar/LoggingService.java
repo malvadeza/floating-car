@@ -46,12 +46,8 @@ public class LoggingService extends Service {
             "io.github.malvadeza.floatingcar.logging_service.new_trip";
     public static final String SERVICE_LOCATION_LATLNG =
             "io.github.malvadeza.floatingcar.logging_service.location_latlng";
-    public static final String SERVICE_ACCELEROMETER_X =
-            "io.github.malvadeza.floatingcar.logging_service.accelerometer_x";
-    public static final String SERVICE_ACCELEROMETER_Y =
-            "io.github.malvadeza.floatingcar.logging_service.accelerometer_y";
-    public static final String SERVICE_ACCELEROMETER_Z =
-            "io.github.malvadeza.floatingcar.logging_service.accelerometer_z";
+    public static final String SERVICE_ACCELEROMETER =
+            "io.github.malvadeza.floatingcar.logging_service.accelerometer";
     public static final String SERVICE_DATA_SPEED =
             "io.github.malvadeza.floatingcar.logging_service.data_speed";
     public static final String SERVICE_DATA_THROTTLE =

@@ -26,15 +26,15 @@ public class Database {
     private static class DatabaseThread extends HandlerThread {
         private Handler mWorkHandler;
 
-        public DatabaseThread(String name) {
+        DatabaseThread(String name) {
             super(name);
         }
 
-        public void prepareHandler() {
+        void prepareHandler() {
             mWorkHandler = new Handler(getLooper());
         }
 
-        public boolean post(Runnable task) {
+        boolean post(Runnable task) {
             return mWorkHandler.post(task);
         }
     }
@@ -42,6 +42,8 @@ public class Database {
     public Database(Context context) {
         mDb = FloatingCarDbHelper.getInstance(context).getWritableDatabase();
         mDbThread = new DatabaseThread("DatabaseThread");
+        mDbThread.start();
+        mDbThread.prepareHandler();
     }
 
     public void startTrip() {

@@ -20,7 +20,7 @@ public class NetworkStatusReceiver extends BroadcastReceiver {
 
         if (networkInfo.isConnected()) {
             Log.d(TAG, "Network connected");
-            /* Start service for upload data */
+            // Start service for upload data
 
             Intent serviceIntent = new Intent(context, SyncService.class);
             serviceIntent.setAction(SyncService.SYNC_TRIPS);

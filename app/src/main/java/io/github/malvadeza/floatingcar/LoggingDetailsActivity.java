@@ -83,12 +83,11 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
                         case LoggingService.SERVICE_NEW_DATA:
                             Log.d(TAG, "Received new data");
                             final Location location = intent.getParcelableExtra(LoggingService.SERVICE_LOCATION_LATLNG);
-                            final int speed = intent.getIntExtra(LoggingService.SERVICE_DATA_SPEED, 0);
-                            final int rpm = intent.getIntExtra(LoggingService.SERVICE_DATA_RPM, 0);
+                            final int speed = Integer.parseInt(intent.getStringExtra(LoggingService.SERVICE_DATA_SPEED));
+                            final int rpm = Integer.parseInt(intent.getStringExtra(LoggingService.SERVICE_DATA_RPM));
 
-                            final double accX = intent.getFloatExtra(LoggingService.SERVICE_ACCELEROMETER_X, 0);
-                            final double accY = intent.getFloatExtra(LoggingService.SERVICE_ACCELEROMETER_Y, 0);
-                            final double accZ = intent.getFloatExtra(LoggingService.SERVICE_ACCELEROMETER_Z, 0);
+                            final float[] acc = intent.getFloatArrayExtra(LoggingService.SERVICE_ACCELEROMETER);
+
 
                             runOnUiThread(new Runnable() {
                                 @Override
@@ -106,11 +105,11 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
                                     mSpeedView.setText(speed + " km/h");
                                     mRPMView.setText(rpm + " rpm");
 
-                                    mAccXView.setText(String.format("%.4f", accX));
-                                    mAccYView.setText(String.format("%.4f", accY));
-                                    mAccZView.setText(String.format("%.4f", accZ));
+                                    mAccXView.setText(String.format("%.4f", acc[0]));
+                                    mAccYView.setText(String.format("%.4f", acc[1]));
+                                    mAccZView.setText(String.format("%.4f", acc[2]));
 
-                                    double gForce = Math.sqrt(accX*accX + accY*accY + accZ*accZ) - SensorManager.STANDARD_GRAVITY;
+                                    double gForce = Math.sqrt(acc[0]*acc[0] + acc[1]*acc[1] + acc[2]*acc[2]) - SensorManager.STANDARD_GRAVITY;
 
                                     mGForce.setText(String.format("%.4f", gForce));
                                 }
@@ -127,6 +126,12 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
     protected void onStart() {
         super.onStart();
         Log.d(TAG, "onStart");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume");
 
         IntentFilter filter = new IntentFilter(LoggingService.SERVICE_BROADCAST_MESSAGE);
         LocalBroadcastManager.getInstance(this)
@@ -134,11 +139,17 @@ public class LoggingDetailsActivity extends AppCompatActivity implements OnMapRe
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause");
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBcReceiver);
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         Log.d(TAG, "onStop");
-
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBcReceiver);
     }
 
     @Override

@@ -1,18 +1,14 @@
 package io.github.malvadeza.floatingcar;
 
 import android.bluetooth.BluetoothSocket;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -21,21 +17,11 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationServices;
-import com.google.common.hash.Hashing;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.ref.WeakReference;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import io.github.malvadeza.floatingcar.data.Database;
-import io.github.malvadeza.floatingcar.data.FloatingCarContract;
-import io.github.malvadeza.floatingcar.data.FloatingCarDbHelper;
 import io.github.malvadeza.floatingcar.data.ObdValue;
 import io.github.malvadeza.floatingcar.data.obd.ObdReader;
 
@@ -53,9 +39,9 @@ public class LoggingThread implements Runnable,
     private final WeakReference<LoggingService> mLoggingServiceReference;
     private final Database mDb;
 
-    private final ObdReader obdReader;
+    private final ObdReader mObdReader;
 
-    private boolean shouldBeLogging = true;
+    private boolean mShouldBeLogging = true;
 
     private Location mLastLocation;
     private Location mSegmentBeginning;
@@ -68,7 +54,7 @@ public class LoggingThread implements Runnable,
 
     public LoggingThread(final LoggingService service, BluetoothSocket btSocket) {
         mLoggingServiceReference = new WeakReference<LoggingService>(service);
-        obdReader = new ObdReader(btSocket);
+        mObdReader = new ObdReader(btSocket);
         mDb = new Database(service);
 
         SensorManager sensorManager = (SensorManager) service.getSystemService(Context.SENSOR_SERVICE);
@@ -79,17 +65,17 @@ public class LoggingThread implements Runnable,
 
     @Override
     public void run() {
-        obdReader.setupObd();
+        mObdReader.setupObd();
 
         mDb.startTrip();
 
-        while (shouldBeLogging) {
+        while (mShouldBeLogging) {
             try {
                 Thread.sleep(UPDATE_TIME);
 
                 final long starTime = System.currentTimeMillis();
 
-                List<ObdValue> obdValues = obdReader.readValues();
+                List<ObdValue> obdValues = mObdReader.readValues();
 
                 final long deltaTime = System.currentTimeMillis() - starTime;
                 Log.d(TAG, "Comm delay -> " + deltaTime);
@@ -104,6 +90,7 @@ public class LoggingThread implements Runnable,
         }
 
         mDb.endTrip();
+        mObdReader.disconnect();
 
         Log.d(TAG, "Finished logging");
     }
@@ -116,9 +103,7 @@ public class LoggingThread implements Runnable,
         Intent intent = new Intent(LoggingService.SERVICE_BROADCAST_MESSAGE);
         intent.putExtra(LoggingService.SERVICE_MESSAGE, LoggingService.SERVICE_NEW_DATA);
         intent.putExtra(LoggingService.SERVICE_LOCATION_LATLNG, mLastLocation);
-        intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_X, mAcc[0]);
-        intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_Y, mAcc[1]);
-        intent.putExtra(LoggingService.SERVICE_ACCELEROMETER_Z, mAcc[2]);
+        intent.putExtra(LoggingService.SERVICE_ACCELEROMETER, mAcc);
         intent.putExtra(LoggingService.SERVICE_DATA_SPEED, speedValue);
         intent.putExtra(LoggingService.SERVICE_DATA_RPM, rpmValue);
 
@@ -128,7 +113,7 @@ public class LoggingThread implements Runnable,
     protected synchronized void stopLogging() {
         Log.d(TAG, "stopLogging");
 
-        shouldBeLogging = false;
+        mShouldBeLogging = false;
     }
 
     @Override

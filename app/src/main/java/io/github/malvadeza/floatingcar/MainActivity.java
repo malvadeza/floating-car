@@ -93,7 +93,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /* Should ask permissions */
                 if (mBtAdapter == null) {
                     runOnUiThread(new Runnable() {
                         @Override
@@ -109,8 +108,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     return;
                 }
 
-                Log.d(TAG, "Start tracking trip");
-
                 if (!LoggingService.isRunning()) {
                     if (!mBtAdapter.isEnabled()) {
                         Intent btIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -122,6 +119,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                             Intent intent = new Intent(MainActivity.this, BluetoothActivity.class);
                             startActivityForResult(intent, BluetoothActivity.REQUEST_CONNECT_DEVICE);
                         } else {
+                            Log.d(TAG, "Start tracking trip");
+
                             startBluetoothService(bluetoothDeviceAddress);
                         }
                     }
@@ -138,6 +137,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     switch (intent.getStringExtra(LoggingService.SERVICE_MESSAGE)) {
                         case LoggingService.SERVICE_BLUETOOTH_CONNECTING: {
                             Log.d(TAG, "Service connecting");
+
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -148,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         }
                         case LoggingService.SERVICE_BLUETOOTH_CONNECTED: {
                             Log.d(TAG, "Service connected");
+
                             final String name = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_NAME);
                             final String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS);
 
@@ -169,8 +170,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                             break;
                         }
                         case LoggingService.SERVICE_BLUETOOTH_ERROR: {
-                            // TODO: Should open BluetoothActivity to possibly select new device
                             Log.d(TAG, "Service bluetooth error");
+
+                            // TODO: Should open BluetoothActivity to possibly select new device
                             final String name = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_NAME);
                             final String address = intent.getStringExtra(BluetoothConnection.BLUETOOTH_TARGET_DEVICE_ADDRESS);
 
@@ -197,10 +199,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     protected void onStart() {
         super.onStart();
         Log.d(TAG, "onStart");
-
-        IntentFilter filter = new IntentFilter(LoggingService.SERVICE_BROADCAST_MESSAGE);
-        LocalBroadcastManager.getInstance(getApplicationContext())
-                .registerReceiver(mBroadcastReceiver, filter);
     }
 
     @Override
@@ -211,16 +209,28 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         if (LoggingService.isRunning()) {
             Intent intent = new Intent(this, LoggingDetailsActivity.class);
             startActivity(intent);
+        } else {
+            IntentFilter filter = new IntentFilter(LoggingService.SERVICE_BROADCAST_MESSAGE);
+            LocalBroadcastManager.getInstance(getApplicationContext())
+                    .registerReceiver(mBroadcastReceiver, filter);
+
+            getSupportLoaderManager().restartLoader(LOADER_ID, null, this);
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause");
+
+        LocalBroadcastManager.getInstance(getApplicationContext())
+                .unregisterReceiver(mBroadcastReceiver);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         Log.d(TAG, "onStop");
-
-        LocalBroadcastManager.getInstance(getApplicationContext())
-                .unregisterReceiver(mBroadcastReceiver);
     }
 
     @Override
@@ -288,11 +298,15 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public Loader<List<TripAdapter.TripHolder>> onCreateLoader(int id, Bundle args) {
+        Log.d(TAG, "Loader - onCreateLoader");
+
         return new TripLoader(getApplicationContext());
     }
 
     @Override
     public void onLoadFinished(Loader<List<TripAdapter.TripHolder>> loader, List<TripAdapter.TripHolder> data) {
+        Log.d(TAG, "Loader - onLoadFinished");
+
         // Set adapter data
         mAdapter.clear();
 
@@ -304,6 +318,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoaderReset(Loader<List<TripAdapter.TripHolder>> loader) {
+        Log.d(TAG, "Loader - onLoaderReset");
+
         mAdapter.clear();
     }
 }
