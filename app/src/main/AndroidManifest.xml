@@ -15,13 +15,20 @@
         android:supportsRtl="true"
         android:theme="@style/DarkAppTheme"
         android:name=".FloatingCarApplication">
-        <activity android:name=".MainActivity">
+        <activity android:name=".trips.TripsActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".TripDetailsActivity"
+            android:label="@string/title_activity_trip_details" />
+
+        <activity android:name=".BluetoothActivity" />
+        <activity android:name=".LoggingDetailsActivity" />
 
         <service
             android:name=".LoggingService"
@@ -31,9 +38,6 @@
             android:name=".services.SyncService"
             android:enabled="true"
             android:exported="false" />
-
-        <activity android:name=".BluetoothActivity" />
-        <activity android:name=".LoggingDetailsActivity" />
 
         <meta-data
             android:name="com.google.android.gms.version"
@@ -48,9 +52,7 @@
             </intent-filter>
         </receiver>
 
-        <activity
-            android:name=".TripDetailsActivity"
-            android:label="@string/title_activity_trip_details" />
+
     </application>
 
 </manifest>

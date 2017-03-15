@@ -1,28 +1,26 @@
 package io.github.malvadeza.floatingcar;
 
 
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+
 public abstract class UseCase<Q extends UseCase.RequestValues, P extends UseCase.ResponseValue> {
-    private Q mRequestValues;
 
-    private UseCaseCallback<P> mUseCaseCallback;
+    private final Scheduler scheduler;
 
-    public void setRequestValues(Q requestValues) {
-        mRequestValues = requestValues;
+    public UseCase(Scheduler scheduler) {
+        this.scheduler = scheduler;
     }
 
-    public Q getRequestValues() {
-        return mRequestValues;
+    public Observable<P> run(Q requestValues) {
+        return execute(requestValues)
+                .subscribeOn(scheduler)
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
-    public void setUseCaseCallback(UseCaseCallback<P> useCaseCallback) {
-        mUseCaseCallback = useCaseCallback;
-    }
+    protected abstract Observable<P> execute(Q requestValues);
 
-    void run() {
-        executeUseCase(mRequestValues);
-    }
-
-    protected abstract void executeUseCase(Q requestValues);
 
     public interface RequestValues {
 
@@ -30,10 +28,5 @@ public abstract class UseCase<Q extends UseCase.RequestValues, P extends UseCase
 
     public interface ResponseValue {
 
-    }
-
-    public interface UseCaseCallback<R> {
-        void onSuccess(R response);
-        void onError();
     }
 }
