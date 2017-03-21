@@ -8,6 +8,7 @@ import java.util.List;
 
 import io.github.malvadeza.floatingcar.UseCase;
 import io.github.malvadeza.floatingcar.adapters.TripAdapter;
+import io.github.malvadeza.floatingcar.data.Trip;
 import io.github.malvadeza.floatingcar.data.source.TripsRepository;
 import io.reactivex.Observable;
 import io.reactivex.functions.Function;
@@ -24,10 +25,10 @@ public class GetTrips extends UseCase<GetTrips.RequestValues, GetTrips.ResponseV
 
     @Override
     protected Observable<ResponseValue> execute(final RequestValues requestValues) {
-        return tripsRepository.getTrips().map(new Function<List<TripAdapter.TripHolder>, ResponseValue>() {
+        return tripsRepository.getTrips().map(new Function<List<Trip>, ResponseValue>() {
             @Override
-            public ResponseValue apply(@io.reactivex.annotations.NonNull List<TripAdapter.TripHolder> tripHolders) throws Exception {
-                return new ResponseValue(tripHolders);
+            public ResponseValue apply(@io.reactivex.annotations.NonNull List<Trip> trip) throws Exception {
+                return new ResponseValue(trip);
             }
         });
     }
@@ -38,13 +39,13 @@ public class GetTrips extends UseCase<GetTrips.RequestValues, GetTrips.ResponseV
 
     public static final class ResponseValue implements UseCase.ResponseValue {
 
-        private final List<TripAdapter.TripHolder> trips;
+        private final List<Trip> trips;
 
-        public ResponseValue(@NonNull List<TripAdapter.TripHolder> trips) {
+        public ResponseValue(@NonNull List<Trip> trips) {
             this.trips = trips;
         }
 
-        public List<TripAdapter.TripHolder> getTrips() {
+        public List<Trip> getTrips() {
             return trips;
         }
 

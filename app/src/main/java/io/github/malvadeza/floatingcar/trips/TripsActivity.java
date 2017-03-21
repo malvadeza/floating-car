@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 
 import io.github.malvadeza.floatingcar.R;
 import io.github.malvadeza.floatingcar.data.source.TripsRepository;
@@ -13,9 +14,12 @@ import io.github.malvadeza.floatingcar.data.source.local.TripsLocalDataSource;
 import io.github.malvadeza.floatingcar.trips.domain.usecase.GetTrips;
 
 public class TripsActivity extends AppCompatActivity {
+    private static final String TAG = TripsActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate");
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.trips_activity);
 
@@ -34,6 +38,8 @@ public class TripsActivity extends AppCompatActivity {
                 new GetTrips(TripsRepository.getInstance(TripsLocalDataSource.getInstance(getApplicationContext()))),
                 tripsFragment
         );
+
+        Log.d(TAG, "onCreate Finished");
     }
 
     /*

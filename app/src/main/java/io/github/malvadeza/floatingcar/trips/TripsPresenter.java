@@ -4,33 +4,36 @@ package io.github.malvadeza.floatingcar.trips;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import io.github.malvadeza.floatingcar.BasePresenter;
+import io.github.malvadeza.floatingcar.BaseView;
+import io.github.malvadeza.floatingcar.adapters.TripAdapter;
+import io.github.malvadeza.floatingcar.data.Trip;
 import io.github.malvadeza.floatingcar.trips.domain.usecase.GetTrips;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 
-public class TripsPresenter implements TripsContract.Presenter {
+public class TripsPresenter implements BasePresenter {
     private static final String TAG = TripsPresenter.class.getSimpleName();
 
-    private final TripsContract.View tripsView;
+    private final TripsFragment view;
     private final GetTrips getTrips;
 
     public TripsPresenter(@NonNull GetTrips getTrips,
-                          @NonNull TripsContract.View tripsView/*,
+                          @NonNull TripsFragment view/*,
                           @NonNull Loader*/) {
-        this.tripsView = tripsView;
+        this.view = view;
         this.getTrips = getTrips;
 
-        this.tripsView.setPresenter(this);
+        this.view.setPresenter(this);
     }
 
     @Override
     public void start() {
-        //tripsView.initLoader();
+        //view.initLoader();
         Log.d(TAG, "start");
         loadTrips();
     }
 
-    @Override
     public void startTrip() {
         Log.d(TAG, "startTrip()");
     }
@@ -41,10 +44,17 @@ public class TripsPresenter implements TripsContract.Presenter {
     }
     */
 
-    private void loadTrips() {
-        Log.d(TAG, "loadTrips");
+    public void openTripDetails(Trip trip) {
+        view.showTripDetailsActivity(trip.getId());
+    }
 
-        tripsView.showProgressBar();
+    public void refreshTrips() {
+        view.clearTrips();
+        loadTrips();
+    }
+
+    private void loadTrips() {
+        view.showProgressBar();
 
         getTrips.run(null).subscribe(new Observer<GetTrips.ResponseValue>() {
             @Override
@@ -55,7 +65,7 @@ public class TripsPresenter implements TripsContract.Presenter {
             @Override
             public void onNext(GetTrips.ResponseValue responseValue) {
                 Log.d(TAG, "loadTrips#onNext");
-                tripsView.showTrips(responseValue.getTrips());
+                view.showTrips(responseValue.getTrips());
             }
 
             @Override
@@ -66,7 +76,7 @@ public class TripsPresenter implements TripsContract.Presenter {
             @Override
             public void onComplete() {
                 Log.d(TAG, "loadTrips#onComplete");
-                tripsView.hideProgressBar();
+                view.hideProgressBar();
             }
         });
     }

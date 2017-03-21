@@ -24,6 +24,10 @@
         </activity>
 
         <activity
+            android:name=".tripdetail.TripDetailsActivity"
+            android:label="@string/title_activity_trip_details" />
+
+        <activity
             android:name=".TripDetailsActivity"
             android:label="@string/title_activity_trip_details" />
 

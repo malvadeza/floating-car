@@ -1,6 +1,8 @@
 package io.github.malvadeza.floatingcar;
 
 
+import android.util.Log;
+
 import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;

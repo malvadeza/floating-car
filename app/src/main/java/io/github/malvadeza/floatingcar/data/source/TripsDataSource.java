@@ -1,7 +1,8 @@
 package io.github.malvadeza.floatingcar.data.source;
 
-
 import android.support.annotation.NonNull;
+
+import com.google.android.gms.maps.model.LatLng;
 
 import java.util.List;
 
@@ -10,15 +11,8 @@ import io.github.malvadeza.floatingcar.data.Trip;
 import io.reactivex.Observable;
 
 public interface TripsDataSource {
-    interface LoadTripsCallBack {
 
-    }
+    Observable<List<Trip>> getTrips();
 
-    interface GetTripsCallback {
-
-    }
-
-    Observable<List<TripAdapter.TripHolder>> getTrips();
-
-    Observable<TripAdapter.TripHolder> getTrip(@NonNull String tripId);
+    Observable<Trip> getTrip(final String tripId);
 }

@@ -13,7 +13,7 @@
     <string name="start_date">%1$s %2$s</string>
     <string name="trip_samples">%1$d samples</string>
     <string name="title_activity_trip_details">TripDetailsActivity</string>
-    <string name="trip_duration">%1$s m</string>
+    <string name="trip_duration">%1$d m</string>
     <string name="vehicle">Vehicle</string>
     <string name="placehold_str" translatable="false">---</string>
     <string name="location">Location</string>
