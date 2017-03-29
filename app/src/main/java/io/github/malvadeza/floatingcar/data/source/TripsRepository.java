@@ -8,7 +8,6 @@ import com.google.android.gms.maps.model.LatLng;
 
 import java.util.List;
 
-import io.github.malvadeza.floatingcar.adapters.TripAdapter;
 import io.github.malvadeza.floatingcar.data.Trip;
 import io.reactivex.Observable;
 
@@ -36,7 +35,6 @@ public class TripsRepository implements TripsDataSource {
 
     @Override
     public Observable<Trip> getTrip(@NonNull String tripId) {
-        Log.d("TripsRepository", "gettingTrip");
         return localDataSource.getTrip(tripId);
     }
 

@@ -28,16 +28,9 @@
             android:label="@string/title_activity_trip_details" />
 
         <activity
-            android:name=".TripDetailsActivity"
-            android:label="@string/title_activity_trip_details" />
+            android:name=".triplogging.TripLoggingActivity"
+            android:label="@string/title_trip_logging_activity" />
 
-        <activity android:name=".BluetoothActivity" />
-        <activity android:name=".LoggingDetailsActivity" />
-
-        <service
-            android:name=".LoggingService"
-            android:enabled="true"
-            android:exported="false" />
         <service
             android:name=".services.SyncService"
             android:enabled="true"
@@ -55,7 +48,6 @@
                 <action android:name="android.net.wifi.STATE_CHANGE" />
             </intent-filter>
         </receiver>
-
 
     </application>
 

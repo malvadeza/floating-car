@@ -1,9 +1,10 @@
 package io.github.malvadeza.floatingcar;
 
 import android.app.Application;
-import android.util.Log;
 
 import com.squareup.leakcanary.LeakCanary;
+
+import timber.log.Timber;
 
 public class FloatingCarApplication extends Application {
     private static final String TAG = FloatingCarApplication.class.getSimpleName();
@@ -15,6 +16,8 @@ public class FloatingCarApplication extends Application {
         if (LeakCanary.isInAnalyzerProcess(this)) {
             return;
         }
+
+        Timber.plant(new Timber.DebugTree());
 
         LeakCanary.install(this);
     }

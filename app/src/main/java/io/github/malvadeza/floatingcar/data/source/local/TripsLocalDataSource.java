@@ -79,8 +79,6 @@ public class TripsLocalDataSource implements TripsDataSource {
         return samples;
     }
 
-
-
     @Override
     public Observable<List<Trip>> getTrips() {
         return Observable.fromCallable(new Callable<List<Trip>>() {
@@ -224,9 +222,9 @@ public class TripsLocalDataSource implements TripsDataSource {
 
                         final double lat = cursor.getDouble(latIndex);
                         final double lng = cursor.getDouble(lngIndex);
-                        final double accX = cursor.getDouble(accXIndex);
-                        final double accY = cursor.getDouble(accYIndex);
-                        final double accZ = cursor.getDouble(accZIndex);
+                        final float accX = cursor.getFloat(accXIndex);
+                        final float accY = cursor.getFloat(accYIndex);
+                        final float accZ = cursor.getFloat(accZIndex);
 
                         PhoneData phoneData = new PhoneData();
                         phoneData.setLatLng(lat, lng);

@@ -8,6 +8,7 @@ import io.github.malvadeza.floatingcar.BasePresenter;
 import io.github.malvadeza.floatingcar.tripdetail.domain.usecase.GetTrip;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 public class TripDetailsPresenter implements BasePresenter{
 
@@ -33,25 +34,10 @@ public class TripDetailsPresenter implements BasePresenter{
     private void loadTrip() {
         Log.d(TAG, "loadTrip");
 
-        getTrip.run(new GetTrip.RequestValues(Long.toString(tripId))).subscribe(new Observer<GetTrip.ResponseValue>() {
+        getTrip.run(new GetTrip.RequestValues(Long.toString(tripId))).subscribe(new Consumer<GetTrip.ResponseValue>() {
             @Override
-            public void onSubscribe(Disposable d) {
-
-            }
-
-            @Override
-            public void onNext(GetTrip.ResponseValue responseValue) {
+            public void accept(@io.reactivex.annotations.NonNull GetTrip.ResponseValue responseValue) throws Exception {
                 Log.d(TAG, "onNext ->" + responseValue.getTrip().getSamples().size());
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "ERROR ->" + e.toString());
-            }
-
-            @Override
-            public void onComplete() {
-
             }
         });
     }

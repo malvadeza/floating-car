@@ -7,7 +7,7 @@ public final class PhoneData {
 
     private LatLng latlng;
 
-    private double[] acc = new double[3];
+    private Accelerometer acc;
 
     public PhoneData() {
 
@@ -17,17 +17,28 @@ public final class PhoneData {
         latlng = new LatLng(latitude, longitude);
     }
 
-    public void setAccelerometer(double x, double y, double z) {
-        acc[0] = x;
-        acc[1] = y;
-        acc[2] = z;
+    public void setAccelerometer(float x, float y, float z) {
+        acc = new Accelerometer(x, y, z);
     }
 
     public LatLng getLatlng() {
         return latlng;
     }
 
-    public double[] getAcc() {
+    public Accelerometer getAccelerometer() {
         return acc;
+    }
+
+    public static class Accelerometer {
+        private float xAxis;
+        private float yAxis;
+        private float zAxis;
+
+        public Accelerometer(float xAxis, float yAxis, float zAxis) {
+            this.xAxis = xAxis;
+            this.yAxis = yAxis;
+            this.zAxis = zAxis;
+        }
+
     }
 }

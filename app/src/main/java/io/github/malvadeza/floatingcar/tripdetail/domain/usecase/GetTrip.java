@@ -8,7 +8,6 @@ import com.google.android.gms.maps.model.LatLng;
 import java.util.List;
 
 import io.github.malvadeza.floatingcar.UseCase;
-import io.github.malvadeza.floatingcar.adapters.TripAdapter;
 import io.github.malvadeza.floatingcar.data.Trip;
 import io.github.malvadeza.floatingcar.data.source.TripsRepository;
 import io.reactivex.Observable;

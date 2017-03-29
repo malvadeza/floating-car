@@ -1,5 +1,6 @@
 package io.github.malvadeza.floatingcar.trips;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -11,18 +12,23 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 import io.github.malvadeza.floatingcar.BaseView;
 import io.github.malvadeza.floatingcar.R;
-import io.github.malvadeza.floatingcar.adapters.TripAdapter;
 import io.github.malvadeza.floatingcar.data.Trip;
 import io.github.malvadeza.floatingcar.tripdetail.TripDetailsActivity;
+import io.github.malvadeza.floatingcar.triplogging.TripLoggingActivity;
 
-public class TripsFragment extends Fragment implements BaseView<TripsPresenter> {
+public class TripsFragment extends Fragment implements TripsView {
     private static final String TAG = TripsFragment.class.getSimpleName();
 
     private TripsPresenter presenter;
@@ -49,10 +55,8 @@ public class TripsFragment extends Fragment implements BaseView<TripsPresenter> 
     }
 
     @Override
-    public void onResume() {
-        Log.d(TAG, "onResume");
-
-        super.onResume();
+    public void onStart() {
+        super.onStart();
         presenter.start();
     }
 
@@ -103,23 +107,75 @@ public class TripsFragment extends Fragment implements BaseView<TripsPresenter> 
     }
 
     public void showTrips(List<Trip> trips) {
-        swipeRefreshLayout.setRefreshing(false);
         tripAdapter.clear();
         tripAdapter.addAll(trips);
     }
 
-    public void showProgressBar() {
+    @Override
+    public void showLoadingStatus() {
         progressBar.setVisibility(View.VISIBLE);
     }
 
-    public void hideProgressBar() {
+    @Override
+    public void hideLoadingStatus() {
         progressBar.setVisibility(View.GONE);
+        swipeRefreshLayout.setRefreshing(false);
     }
 
-    public void showTripDetailsActivity(long tripId) {
+    @Override
+    public void openTripDetailsActivity(long tripId) {
         Intent intent = new Intent(getContext(), TripDetailsActivity.class);
         intent.putExtra(TripDetailsActivity.TRIP_ID, tripId);
         startActivity(intent);
+    }
+
+    @Override
+    public void startTripLoggingActivity() {
+        Intent intent = new Intent(getContext(), TripLoggingActivity.class);
+        startActivity(intent);
+    }
+
+
+    private static class TripAdapter extends ArrayAdapter<Trip> {
+        private static final String TAG = TripAdapter.class.getSimpleName();
+
+        private static final DateFormat startDayTimeFmt = new SimpleDateFormat("EEEE, HH:mm", Locale.getDefault());
+        private static final DateFormat startDateFmt = new SimpleDateFormat("MMMM dd", Locale.getDefault());
+
+        TripAdapter(Context context) {
+            super(context, R.layout.trip_list_item);
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, View convertView, @NonNull ViewGroup parent) {
+            View view = convertView;
+
+            if (view == null) {
+                view = LayoutInflater.from(getContext()).inflate(R.layout.trip_list_item, parent, false);
+            }
+
+            Trip trip = getItem(position);
+
+            if (trip != null) {
+                TextView startDayTime = (TextView) view.findViewById(R.id.start_day_time);
+                startDayTime.setText(startDayTimeFmt.format(trip.getStartedAt()));
+
+                TextView startDate = (TextView) view.findViewById(R.id.start_date);
+                startDate.setText(startDateFmt.format(trip.getStartedAt()));
+
+                TextView duration = (TextView) view.findViewById(R.id.trip_duration);
+                duration.setText(getContext().getString(R.string.trip_duration, trip.getDurationInMinutes()));
+
+                TextView samples = (TextView) view.findViewById(R.id.trip_samples);
+                samples.setText(getContext().getString(R.string.trip_samples, trip.getSamples().size()));
+
+                TextView distance = (TextView) view.findViewById(R.id.trip_distance);
+            }
+
+            return view;
+        }
+
     }
 
 }
