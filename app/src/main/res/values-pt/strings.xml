@@ -15,5 +15,4 @@
     <string name="accelerometer">Acelerômetro</string>
     <string name="location">Localização</string>
     <string name="title_activity_maps">Mapa</string>
-    <string name="hello_blank_fragment">Olá fragmento em branco</string>
 </resources>

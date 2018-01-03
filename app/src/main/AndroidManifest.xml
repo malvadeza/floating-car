@@ -31,11 +31,6 @@
             android:name=".triplogging.TripLoggingActivity"
             android:label="@string/title_trip_logging_activity" />
 
-        <service
-            android:name=".services.SyncService"
-            android:enabled="true"
-            android:exported="false" />
-
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
